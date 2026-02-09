@@ -1,4 +1,4 @@
 fastapi
 uvicorn
 beautifulsoup4
-curl-cffi
+httpx[http2]
