@@ -9,7 +9,6 @@ import random
 
 app = FastAPI()
 
-# --- CORS CONFIGURATION ---
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -18,51 +17,57 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Menggunakan domain utama sebagai pintu masuk (Gateway)
-BASE_URL = "https://kuramanime.net"
-
-USER_AGENTS = [
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
-    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"
+# DAFTAR MIRROR (Jika satu mati, coba yang lain)
+MIRRORS = [
+    "https://v13.kuramanime.tel",
+    "https://kuramanime.net",
+    "https://kuramanime.run"
 ]
 
-async def fetch_url(url):
+async def fetch_url(url_path):
     """
-    Fungsi Stealth: Menggunakan HTTP/2, Identitas Acak, dan Sistem Retry.
-    Jika percobaan pertama gagal (403), ia akan mencoba lagi secara otomatis.
+    JURUS PAKSA: Mencoba semua mirror yang tersedia dengan identitas browser 
+    paling lengkap (termasuk Sec-Fetch headers).
     """
-    for attempt in range(3):
+    # Jika url_path sudah full URL, gunakan itu, jika tidak gabungkan dengan mirror
+    path = url_path if url_path.startswith("http") else url_path
+    
+    # Ambil mirror secara acak untuk percobaan pertama
+    random.shuffle(MIRRORS)
+    
+    for mirror in MIRRORS:
+        full_url = f"{mirror}/{path.lstrip('/')}" if not path.startswith("http") else path
+        
         headers = {
-            "authority": "kuramanime.net",
-            "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
-            "accept-language": "id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7",
-            "sec-ch-ua": '"Not A(Brand";v="99", "Google Chrome";v="121", "Chromium";v="121"',
-            "sec-ch-ua-mobile": "?0",
-            "sec-ch-ua-platform": '"Windows"',
-            "sec-fetch-dest": "document",
-            "sec-fetch-mode": "navigate",
-            "sec-fetch-site": "none",
-            "user-agent": random.choice(USER_AGENTS),
-            "upgrade-insecure-requests": "1",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+            "Accept-Language": "id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7",
+            "Sec-Fetch-Dest": "document",
+            "Sec-Fetch-Mode": "navigate",
+            "Sec-Fetch-Site": "none",
+            "Sec-Fetch-User": "?1",
+            "Upgrade-Insecure-Requests": "1",
+            "Referer": "https://www.google.com/"
         }
+
         try:
-            async with httpx.AsyncClient(http2=True, follow_redirects=True, timeout=20.0) as client:
-                response = await client.get(url, headers=headers)
-                if response.status_code == 200:
+            async with httpx.AsyncClient(http2=True, follow_redirects=True, timeout=15.0) as client:
+                response = await client.get(full_url, headers=headers)
+                
+                # Cek apakah responnya valid dan bukan halaman blokir Cloudflare
+                if response.status_code == 200 and "Cloudflare" not in response.text:
                     return response
-                print(f"Percobaan {attempt + 1} Gagal: Status {response.status_code}")
-                await asyncio.sleep(1) # Jeda sebentar sebelum coba lagi
-        except Exception as e:
-            print(f"Error pada percobaan {attempt + 1}: {e}")
-            await asyncio.sleep(1)
+                
+                print(f"Mirror {mirror} terdeteksi bot/blokir. Mencoba mirror lain...")
+        except:
+            continue
             
     return None
 
-# --- HELPER ---
-def encode_slug(url_path):
-    """Membersihkan URL dari domain apapun agar slug tetap konsisten"""
+# --- HELPER (Slug Tanpa Domain) ---
+def clean_slug(url_path):
     try:
+        # Menghapus semua jenis domain kuramanime dari slug
         clean = re.sub(r'https?://[^/]+', '', url_path)
         clean = clean.replace("/anime/", "").strip("/")
         return clean.replace("/", "__")
@@ -71,20 +76,76 @@ def encode_slug(url_path):
 def decode_slug(safe_slug):
     return safe_slug.replace("__", "/")
 
-def parse_anime_item(item):
-    try:
-        a_tag = item.select_one('h5 a')
-        img_tag = item.select_one('.product__item__pic')
-        ep_tag = item.select_one('.ep') or item.select_one('ul li')
-        return {
-            "title": a_tag.text.strip() if a_tag else "No Title",
-            "slug": encode_slug(a_tag['href']) if a_tag else "",
-            "image": img_tag['data-setbg'] if img_tag else "",
-            "episode": ep_tag.text.strip() if ep_tag else "N/A"
-        }
-    except: return None
-
 # --- ENDPOINTS ---
+
+@app.get("/api/home")
+async def get_home():
+    res = await fetch_url("/")
+    if not res: return {"status": "error", "message": "Semua Mirror Terblokir Cloudflare"}
+    
+    soup = BeautifulSoup(res.text, 'html.parser')
+    slider = []
+    for item in soup.select('.hero__items'):
+        link = item.select_one('a')
+        if link:
+            slider.append({
+                "title": item.select_one('h2').text.strip() if item.select_one('h2') else "",
+                "image": item['data-setbg'] if 'data-setbg' in item.attrs else "",
+                "slug": clean_slug(link['href'])
+            })
+
+    latest = []
+    for item in soup.select('.product__item')[:12]:
+        a_tag = item.select_one('h5 a')
+        if a_tag:
+            latest.append({
+                "title": a_tag.text.strip(),
+                "slug": clean_slug(a_tag['href']),
+                "image": item.select_one('.product__item__pic')['data-setbg'] if item.select_one('.product__item__pic') else "",
+                "episode": item.select_one('.ep').text.strip() if item.select_one('.ep') else "N/A"
+            })
+
+    return {"status": "success", "slider": slider, "latest_release": latest}
+
+@app.get("/api/donghua/{slug}")
+async def get_detail(slug: str):
+    real_path = decode_slug(slug)
+    res = await fetch_url(f"/anime/{real_path}")
+    if not res: return {"status": "error", "message": "Detail Terblokir"}
+    
+    soup = BeautifulSoup(res.text, 'html.parser')
+    anime_id = real_path.split('/')[0]
+    
+    info = {}
+    for li in soup.select('.anime__details__widget ul li'):
+        text = li.get_text(separator=":", strip=True)
+        if ":" in text:
+            parts = text.split(":", 1)
+            info[parts[0].strip().lower().replace(" ", "_")] = parts[1].strip()
+
+    episodes = []
+    found_links = re.findall(r'href=["\']([^"\']+/episode/(\d+))["\']', res.text)
+    seen = set()
+    for link, ep_num in found_links:
+        if anime_id in link and link not in seen:
+            seen.add(link)
+            episodes.append({
+                "episode": f"Episode {ep_num}",
+                "slug": clean_slug(link),
+            })
+
+    return {
+        "status": "success",
+        "data": {
+            "title": soup.select_one('.anime__details__title h3').text.strip() if soup.select_one('.anime__details__title h3') else "Anime",
+            "image": soup.select_one('.anime__details__pic')['data-setbg'] if soup.select_one('.anime__details__pic') else "",
+            "synopsis": soup.select_one('.anime__details__text p').text.strip() if soup.select_one('.anime__details__text p') else "",
+            "info": info,
+            "episodes": sorted(episodes, key=lambda x: int(re.search(r'\d+', x['episode']).group()), reverse=True)
+        }
+    }
+
+# --- Tetap masukkan Endpoint Search, Stream, dan Schedule di sini dengan pola fetch_url baru ---
 
 @app.get("/api/home")
 async def get_home():
