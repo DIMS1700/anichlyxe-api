@@ -1,13 +1,15 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-import httpx # <-- Ganti curl_cffi dengan httpx
+import httpx
 from bs4 import BeautifulSoup
 import re
 import base64
 import asyncio
+import random
 
 app = FastAPI()
 
+# --- CORS CONFIGURATION ---
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -16,34 +18,53 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-BASE_URL = "https://v13.kuramanime.tel"
+# Menggunakan domain utama sebagai pintu masuk (Gateway)
+BASE_URL = "https://kuramanime.net"
+
+USER_AGENTS = [
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"
+]
 
 async def fetch_url(url):
     """
-    Bypass menggunakan HTTP/2. 
-    Cloudflare sering meloloskan koneksi HTTP/2 karena meniru perilaku browser modern.
+    Fungsi Stealth: Menggunakan HTTP/2, Identitas Acak, dan Sistem Retry.
+    Jika percobaan pertama gagal (403), ia akan mencoba lagi secara otomatis.
     """
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
-        "Accept-Language": "id-ID,id;q=0.9,en-US;q=0.8",
-        "Referer": "https://www.google.com/",
-    }
-    try:
-        # Menggunakan HTTP/2 untuk mengelabui Cloudflare
-        async with httpx.AsyncClient(http2=True, follow_redirects=True, timeout=15.0) as client:
-            response = await client.get(url, headers=headers)
-            if response.status_code == 200:
-                return response
-            return None
-    except Exception as e:
-        print(f"Fetch Error: {e}")
-        return None
+    for attempt in range(3):
+        headers = {
+            "authority": "kuramanime.net",
+            "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+            "accept-language": "id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7",
+            "sec-ch-ua": '"Not A(Brand";v="99", "Google Chrome";v="121", "Chromium";v="121"',
+            "sec-ch-ua-mobile": "?0",
+            "sec-ch-ua-platform": '"Windows"',
+            "sec-fetch-dest": "document",
+            "sec-fetch-mode": "navigate",
+            "sec-fetch-site": "none",
+            "user-agent": random.choice(USER_AGENTS),
+            "upgrade-insecure-requests": "1",
+        }
+        try:
+            async with httpx.AsyncClient(http2=True, follow_redirects=True, timeout=20.0) as client:
+                response = await client.get(url, headers=headers)
+                if response.status_code == 200:
+                    return response
+                print(f"Percobaan {attempt + 1} Gagal: Status {response.status_code}")
+                await asyncio.sleep(1) # Jeda sebentar sebelum coba lagi
+        except Exception as e:
+            print(f"Error pada percobaan {attempt + 1}: {e}")
+            await asyncio.sleep(1)
+            
+    return None
 
 # --- HELPER ---
 def encode_slug(url_path):
+    """Membersihkan URL dari domain apapun agar slug tetap konsisten"""
     try:
-        clean = url_path.replace(BASE_URL, "").replace("/anime/", "").strip("/")
+        clean = re.sub(r'https?://[^/]+', '', url_path)
+        clean = clean.replace("/anime/", "").strip("/")
         return clean.replace("/", "__")
     except: return url_path
 
@@ -63,7 +84,7 @@ def parse_anime_item(item):
         }
     except: return None
 
-# --- ENDPOINTS (Semua diubah jadi ASYNC karena httpx async) ---
+# --- ENDPOINTS ---
 
 @app.get("/api/home")
 async def get_home():
@@ -73,11 +94,10 @@ async def get_home():
     soup = BeautifulSoup(res.text, 'html.parser')
     slider = []
     for item in soup.select('.hero__items'):
-        title = item.select_one('h2').text.strip() if item.select_one('h2') else ""
         link = item.select_one('a')
         if link:
             slider.append({
-                "title": title,
+                "title": item.select_one('h2').text.strip() if item.select_one('h2') else "",
                 "image": item['data-setbg'] if 'data-setbg' in item.attrs else "",
                 "slug": encode_slug(link['href'])
             })
@@ -92,7 +112,7 @@ async def get_home():
 @app.get("/api/search")
 async def search(q: str):
     res = await fetch_url(f"{BASE_URL}/anime?search={q}&order_by=latest")
-    if not res: return {"status": "error"}
+    if not res: return {"status": "error", "message": "Search blocked"}
     soup = BeautifulSoup(res.text, 'html.parser')
     results = []
     for item in soup.select('.product__item'):
@@ -123,10 +143,10 @@ async def get_detail(slug: str):
     for link, ep_num in found_links:
         if anime_id in link and link not in seen:
             seen.add(link)
-            clean_link = link.replace(BASE_URL, "").replace("/anime/", "").strip("/")
+            clean_link = encode_slug(link)
             episodes.append({
                 "episode": f"Episode {ep_num}",
-                "slug": clean_link.replace("/", "__"),
+                "slug": clean_link,
             })
 
     return {
