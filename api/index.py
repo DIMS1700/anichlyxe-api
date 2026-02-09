@@ -8,45 +8,64 @@ app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# DATA TOKEN KAMU
+# KONFIGURASI
 ANT_TOKEN = "007a4bf116c740fea9f1c2457e599b8f"
 TARGET_URL = "https://animechina.my.id"
 
 @app.get("/api/home")
 async def get_home():
-    # Gunakan ScraperAnt tanpa &browser=true dulu agar CEPAT (menghindari Error 500)
-    # Tapi kita tambahkan &proxy_type=residential agar tetap kuat tembus Cloudflare
-    api_url = f"https://api.scraperant.com/v2/general?url={TARGET_URL}&x-api-key={ANT_TOKEN}&proxy_type=residential"
+    # KUNCI: wait_for_selector memastikan data sudah muncul sebelum di-scrape
+    # Kita juga set browser=true agar Cloudflare menganggap ini Chrome asli
+    api_url = (
+        f"https://api.scraperant.com/v2/general?"
+        f"url={TARGET_URL}&"
+        f"x-api-key={ANT_TOKEN}&"
+        f"browser=true&"
+        f"wait_for_selector=.listupd"
+    )
     
     try:
-        async with httpx.AsyncClient(timeout=25.0) as client:
+        # Vercel Hobby punya limit timeout 10 detik, jadi kita harus gerak cepat
+        # Jika Timeout, coba kurangi limit data yang di-scrape
+        async with httpx.AsyncClient(timeout=10.0) as client:
             response = await client.get(api_url)
             
             if response.status_code != 200:
                 return {
                     "status": "error", 
-                    "message": f"ScraperAnt menolak dengan kode {response.status_code}. Cek kuota/token."
+                    "message": f"ScraperAnt Error (Code: {response.status_code}). Cek kredit Anda."
                 }
             
             soup = BeautifulSoup(response.text, 'html.parser')
             latest = []
             
-            # Ambil data sederhana: Judul dan Gambar
-            for item in soup.select('.listupd .bs')[:12]:
-                title = item.select_one('.tt').get_text(strip=True) if item.select_one('.tt') else "No Title"
-                img = item.select_one('img')['src'] if item.select_one('img') else ""
-                latest.append({"title": title, "image": img})
+            # Ambil 10 data saja agar proses parsing cepat
+            items = soup.select('.listupd .bs')
+            for item in items[:10]:
+                title_el = item.select_one('.tt')
+                img_el = item.select_one('img')
+                link_el = item.select_one('a')
+                
+                if title_el:
+                    latest.append({
+                        "title": title_el.get_text(strip=True),
+                        "image": img_el['src'] if img_el else "",
+                        "slug": link_el['href'].replace(TARGET_URL, "").strip("/").replace("/", "__") if link_el else ""
+                    })
             
             return {
                 "status": "success",
-                "total": len(latest),
+                "engine": "ScraperAnt-Sniper",
                 "data": latest
             }
             
     except Exception as e:
-        return {"status": "error", "message": f"Timeout atau Error: {str(e)}"}
+        # Jika kena timeout Vercel, kita berikan pesan yang jelas
+        return {
+            "status": "error", 
+            "message": "Vercel Timeout. Coba refresh halaman ini dalam 5 detik."
+        }
