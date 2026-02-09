@@ -5,7 +5,7 @@ from bs4 import BeautifulSoup
 import re
 import random
 import requests
-from urllib.parse import urljoin # Import penting untuk fix link gambar
+from urllib.parse import quote, unquote
 
 app = FastAPI()
 
@@ -16,9 +16,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# KONFIGURASI DOMAIN SHINIGAMI
+# Kita pakai beberapa mirror untuk jaga-jaga
 DOMAINS = [
-    "https://api.komiku.org",
-    "https://komiku.org"
+    "https://shinigami.asia",      # Domain Utama (Biasanya redirect ke yang aktif)
+    "https://09.shinigami.asia",   # Domain pilihanmu
+    "https://id.shinigami.asia"    # Cadangan
 ]
 
 # ==========================================
@@ -28,68 +31,54 @@ def get_scraper():
     scraper = cloudscraper.create_scraper(
         browser={'browser': 'chrome', 'platform': 'windows', 'mobile': False}
     )
+    # Header yang mirip browser asli agar tidak diblokir Shinigami
     scraper.headers.update({
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Referer': 'https://komiku.org/',
-        'Origin': 'https://komiku.org'
+        'Referer': 'https://shinigami.asia/',
+        'Origin': 'https://shinigami.asia'
     })
     return scraper
 
 scraper = get_scraper()
 
 # ==========================================
-# 🛠️ HELPER: FIX URL GAMBAR (V17)
-# ==========================================
-def fix_url(url, base="https://komiku.org"):
-    if not url: return ""
-    # Hapus spasi dan newline
-    url = url.strip()
-    # Jika url relatif (misal: /uploads/...), sambungkan dengan domain
-    if url.startswith("/"):
-        return f"{base}{url}"
-    # Jika url protocol-relative (misal: //komiku.org/...), tambah https:
-    if url.startswith("//"):
-        return f"https:{url}"
-    return url
-
-# ==========================================
-# 🛠️ SMART FETCH
+# 🛠️ HELPER: SMART FETCH
 # ==========================================
 def fetch_smart(path: str, params: str = ""):
     for domain in DOMAINS:
         url = f"{domain}{path}{params}"
         try:
-            host = domain.replace("https://", "")
-            scraper.headers.update({'Authority': host})
             print(f"🔄 Mencoba: {url}")
-            response = scraper.get(url, timeout=20)
+            response = scraper.get(url, timeout=25)
+            
             if response.status_code == 200:
                 soup = BeautifulSoup(response.text, "html.parser")
-                # Validasi konten
-                if soup.select('.bge') or soup.select('#Baca_Komik') or soup.select('#Daftar_Chapter') or soup.find('a', href=re.compile(r'/(manga|manhua|manhwa)/')):
+                # Validasi: Apakah ini halaman Shinigami valid?
+                if soup.select('.site-content') or soup.select('.page-item-detail') or soup.select('.reading-content'):
                     print(f"✅ Sukses di: {domain}")
                     return soup
+            print(f"⚠️ Gagal/Kosong di: {domain}")
         except Exception as e:
             print(f"❌ Error {domain}: {e}")
     return None
 
 # ==========================================
-# 🖼️ IMAGE PROXY (V17 - LEBIH KUAT)
+# 🖼️ IMAGE PROXY (WAJIB ADA)
 # ==========================================
 @app.get("/api/image")
 async def image_proxy(url: str):
-    if not url or "placeholder" in url: return Response(status_code=404)
+    if not url: return Response(status_code=404)
     try:
-        # Perbaiki URL sebelum request jika masih relatif
-        if not url.startswith("http"):
-            url = fix_url(url)
-
+        # Dekode URL jika ter-encode
+        target_url = unquote(url)
+        
         headers = {
-            "Referer": "https://komiku.org/",
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-            "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8"
+            "Referer": "https://shinigami.asia/", # Referer Shinigami agar tidak 403 Forbidden
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
         }
-        resp = requests.get(url, headers=headers, stream=True, timeout=15)
+        
+        resp = requests.get(target_url, headers=headers, stream=True, timeout=20)
+        
         if resp.status_code == 200:
             return Response(content=resp.content, media_type="image/jpeg")
         return Response(status_code=404)
@@ -97,212 +86,250 @@ async def image_proxy(url: str):
         return Response(status_code=500)
 
 # ==========================================
-# 🛠️ HELPER: PARSING DATA
+# 🛠️ HELPER: PARSING ITEM (MADARA THEME)
 # ==========================================
-def parse_manga_item(item):
+def parse_shinigami_item(item):
     try:
-        link = item if item.name == 'a' else item.find('a')
-        if not link: return None
-        href = link.get('href')
-        if not href or len(href) < 5: return None
+        # 1. Judul & Link
+        title_tag = item.select_one('.post-title h3 a, .post-title h4 a, .h5 a')
+        if not title_tag: return None
+        
+        title = title_tag.text.strip()
+        href = title_tag.get('href')
+        
+        # Ambil slug dari URL (contoh: .../series/one-piece/ -> one-piece)
         slug = href.strip('/').split('/')[-1]
-        if slug in ['manga', 'manhua', 'manhwa', 'genre', 'other', 'hot', 'populer']: return None
-
-        # GAMBAR (V17 FIX)
-        img = item.find('img')
-        if not img and item.name == 'a': img = item.parent.find('img')
+        
+        # 2. Gambar
+        img_tag = item.select_one('img')
         image = "https://via.placeholder.com/150?text=No+Image"
-        if img:
-            raw = img.get('data-src') or img.get('src')
-            if raw: image = fix_url(raw.split('?')[0])
+        
+        if img_tag:
+            # Madara theme sering pakai data-src atau srcset
+            src = img_tag.get('data-src') or img_tag.get('src') or img_tag.get('srcset')
+            if src:
+                # Ambil URL pertama jika ada spasi (srcset)
+                image = src.split(' ')[0]
+                # Fix jika URL relatif
+                if image.startswith("//"): image = "https:" + image
 
-        # JUDUL
-        title = ""
-        h3 = item.find(['h3', 'h4'])
-        if h3: title = h3.get_text(strip=True)
-        if not title and img: title = img.get('title') or img.get('alt')
-        if not title:
-            raw = link.get_text(" ", strip=True)
-            title = re.sub(r'(Manga|Manhwa|Manhua|Komik|Isekai|Fantasi)\s?', '', raw, flags=re.IGNORECASE).strip()
+        # 3. Chapter Terbaru
+        latest = "Chapter ?"
+        chapter_tag = item.select_one('.list-chapter .chapter-item .btn-link, .chapter-item a')
+        if chapter_tag:
+            latest = chapter_tag.text.strip()
 
-        title = re.sub(r'^(Komik|Baca|Manga|Manhwa|Manhua)\s+', '', title, flags=re.IGNORECASE)
-        title = re.sub(r'(Up\s?\d+|Baru|Warna|Hot)\s*$', '', title, flags=re.IGNORECASE).strip()
-        if not title: title = slug.replace('-', ' ').title()
+        # 4. Tipe (Manga/Manhwa/Manhua)
+        # Shinigami kadang tidak menampilkan tipe di card, kita default ke Manga atau cek bendera jika ada
+        type_str = "Manga" 
+        if "manhwa" in slug.lower(): type_str = "Manhwa"
+        elif "manhua" in slug.lower(): type_str = "Manhua"
 
-        # LATEST
-        latest = ""
-        latest_tag = item.find(lambda tag: tag.name in ['div', 'span'] and ('new' in str(tag.get('class','')) or 'judul2' in str(tag.get('class',''))))
-        if latest_tag: latest = latest_tag.get_text(strip=True)
-        else:
-            txt = item.get_text(" ", strip=True)
-            match = re.search(r'(Ch\.|Chapter)\s?\d+', txt)
-            if match: latest = match.group(0)
-
-        type_str = "Manga"
-        if 'manhwa' in href: type_str = "Manhwa"
-        elif 'manhua' in href: type_str = "Manhua"
-
-        return {"title": title, "slug": slug, "image": image, "latest": latest, "type": type_str}
-    except:
+        return {
+            "title": title,
+            "slug": slug,
+            "image": image,
+            "latest": latest,
+            "type": type_str
+        }
+    except Exception as e:
+        # print(f"Error parsing item: {e}")
         return None
 
 # ==========================================
 # ENDPOINTS
 # ==========================================
 @app.get("/")
-async def root(): return {"status": "API V17 (Final Image Fix)", "docs": "/docs"}
+async def root(): return {"status": "API Shinigami V18 (Madara Base)", "docs": "/docs"}
 
 @app.get("/api/home")
 async def get_home():
+    # Home biasanya ada di section 'Latest Update'
     soup = fetch_smart("/")
     if not soup: return []
+    
     data, seen = [], set()
-    items = soup.select('.bge') or soup.find_all('a', href=re.compile(r'/(manga|manhua|manhwa)/'))
+    
+    # Selector Madara Theme untuk item list
+    items = soup.select('.page-item-detail, .c-tabs-item__content')
+    
     for item in items:
-        if item.text.strip().startswith('#'): continue
-        manga = parse_manga_item(item)
+        manga = parse_shinigami_item(item)
         if manga and manga['slug'] not in seen:
-            if "placeholder" not in manga['image']: 
-                seen.add(manga['slug'])
-                data.append(manga)
-        if len(data) >= 40: break
+            seen.add(manga['slug'])
+            data.append(manga)
+            
     return data
 
 @app.get("/api/popular")
 async def get_popular():
-    soup = fetch_smart("/other/hot/")
-    if not soup or not soup.select('.bge'): soup = fetch_smart("/daftar-komik/", "?orderby=popular")
+    # Shinigami pakai filter sort=views atau trending
+    soup = fetch_smart("/manga/?m_orderby=views")
+    if not soup: return []
+
     data, seen = [], set()
-    if soup:
-        items = soup.select('.bge')
-        for item in items:
-            manga = parse_manga_item(item)
-            if manga and manga['slug'] not in seen:
-                seen.add(manga['slug'])
-                data.append(manga)
+    items = soup.select('.page-item-detail')
+    
+    for item in items:
+        manga = parse_shinigami_item(item)
+        if manga and manga['slug'] not in seen:
+            seen.add(manga['slug'])
+            data.append(manga)
     return data
 
 @app.get("/api/search")
 async def search(query: str):
+    # Shinigami search url: /?s=query&post_type=wp-manga
     clean_query = query.replace(" ", "+")
-    soup = fetch_smart("/", f"?post_type=manga&s={clean_query}")
+    soup = fetch_smart(f"/?s={clean_query}&post_type=wp-manga")
+    
     data, seen = [], set()
     if soup:
-        items = soup.select('.bge') or soup.find_all('a', href=re.compile(r'/(manga|manhua|manhwa)/'))
+        # Hasil search Madara biasanya layoutnya .c-tabs-item__content
+        items = soup.select('.c-tabs-item__content, .tab-content-wrap .c-tabs-item__content')
         for item in items:
-            manga = parse_manga_item(item)
+            manga = parse_shinigami_item(item)
             if manga and manga['slug'] not in seen:
                 seen.add(manga['slug'])
                 data.append(manga)
     return data
 
 @app.get("/api/list")
-async def get_list(page: int = 1, genre: str = None, status: str = None, type: str = None, order: str = None):
-    is_random = (order == "acak")
-    if is_random: order = "update"
-    base_url = f"{API_DOMAIN}/daftar-komik/"
-    if page > 1: base_url += f"page/{page}/"
+async def get_list(page: int = 1, genre: str = None, order: str = None):
+    # Base URL List di Madara biasanya /manga/page/X/
+    base_path = "/manga/"
+    if page > 1: base_path += f"page/{page}/"
+    
     params = []
-    if genre: params.append(f"genre={genre}")
-    if status: params.append(f"status={'end' if status == 'completed' else status}")
-    if type: params.append(f"tipe={type}")
-    if order: params.append(f"orderby={order}")
-    query = "&".join(params)
-    soup = fetch_html(f"{base_url}?{query}" if params else base_url)
-    if (not soup or not soup.select('.bge')) and genre:
-        soup = fetch_html(f"{API_DOMAIN}/genre/{genre}/page/{page}/")
+    if order == "popular": params.append("m_orderby=views")
+    elif order == "update": params.append("m_orderby=latest")
+    elif order == "title": params.append("m_orderby=alphabet")
+    else: params.append("m_orderby=latest") # Default
+    
+    # Kalau ada genre: /manga-genre/isekai/page/X/
+    if genre:
+        base_path = f"/manga-genre/{genre}/"
+        if page > 1: base_path += f"page/{page}/"
+    
+    query = "?" + "&".join(params)
+    soup = fetch_smart(base_path, query)
+    
     data, seen = [], set()
     if soup:
-        candidates = soup.select('.bge, .kan, .daftar .item') or soup.find_all('a', href=re.compile(r'/(manga|manhua|manhwa)/'))
-        for item in candidates:
-            manga = parse_manga_item(item)
+        items = soup.select('.page-item-detail')
+        for item in items:
+            manga = parse_shinigami_item(item)
             if manga and manga['slug'] not in seen:
                 seen.add(manga['slug'])
                 data.append(manga)
-    if is_random: random.shuffle(data)
     return data
 
 @app.get("/api/detail/{slug}")
 async def detail(slug: str):
-    soup = fetch_smart(f"/manga/{slug}/")
+    # URL Detail: /series/judul-manga/
+    # Kadang /manga/judul-manga/
+    # Kita coba Smart Fetch dengan path /series/ dulu
+    soup = fetch_smart(f"/series/{slug}/")
+    if not soup:
+        soup = fetch_smart(f"/manga/{slug}/") # Coba path alternatif
+        
     if not soup: return {"error": "Not Found"}
+    
     try:
-        h1 = soup.find('h1')
-        title = h1.text.strip() if h1 else slug
-        title = re.sub(r'(Baca|Komik|Manga|Manhwa|Manhua)\s?', '', title, flags=re.IGNORECASE).strip()
+        # Judul
+        title_elem = soup.select_one('.post-title h1')
+        title = title_elem.text.strip() if title_elem else slug
         
-        # Gambar Detail (V17 FIX)
+        # Gambar
+        img_elem = soup.select_one('.summary_image img')
         image = ""
-        img_tag = soup.select_one('.sd-img img')
-        if img_tag:
-            raw = img_tag.get('src') or img_tag.get('data-src')
-            if raw: image = fix_url(raw.split('?')[0])
+        if img_elem:
+            image = img_elem.get('data-src') or img_elem.get('src')
+            if image: image = image.split(' ')[0] # Bersihkan srcset
+            
+        # Sinopsis
+        desc_elem = soup.select_one('.summary__content, .manga-excerpt')
+        synopsis = desc_elem.text.strip() if desc_elem else ""
         
-        desc = soup.select_one('.desc, .sinopsis, #Sinopsis')
-        synopsis = desc.get_text(strip=True) if desc else ""
+        # Info Tambahan (Author, Status, dll)
         info = {}
-        for row in soup.select('.inftable tr'):
-            cols = row.find_all('td')
-            if len(cols) == 2: info[cols[0].text.replace(':', '').strip()] = cols[1].text.strip()
+        for row in soup.select('.post-content_item'):
+            key = row.select_one('h5')
+            val = row.select_one('.summary-content')
+            if key and val:
+                info[key.text.strip().replace(":", "")] = val.text.strip()
 
         # Chapter List
         chapters = []
+        # Selector chapter list di Madara
+        chap_list = soup.select('.wp-manga-chapter a') # Kadang urutannya terbalik
+        
         seen_ch = set()
-        # Cari tabel daftar chapter
-        chapter_table = soup.find('table', id='Daftar_Chapter')
-        if chapter_table:
-            for row in chapter_table.find_all('tr'):
-                td = row.find('td', class_='judulseries')
-                if td:
-                    link = td.find('a')
-                    if link:
-                        href = link.get('href')
-                        ch_slug = href.strip('/').split('/')[-1]
-                        if ch_slug not in seen_ch:
-                            seen_ch.add(ch_slug)
-                            chapters.append({"title": link.text.strip(), "slug": ch_slug, "date": "-"})
-        else:
-            # Fallback
-            for link in soup.find_all('a', href=re.compile(r'/(ch|chapter)/')):
-                ch_slug = link.get('href').strip('/').split('/')[-1]
-                if ch_slug == slug or ch_slug in seen_ch: continue
+        for link in chap_list:
+            ch_url = link.get('href')
+            # Slug chapter biasanya bagian terakhir URL
+            ch_slug = ch_url.strip('/').split('/')[-1]
+            
+            if ch_slug not in seen_ch:
                 seen_ch.add(ch_slug)
-                chapters.append({"title": link.text.strip(), "slug": ch_slug, "date": "-"})
-
-        return {"title": title, "image": image, "synopsis": synopsis, "info": info, "chapters": chapters}
-    except Exception as e: return {"error": str(e)}
+                chapters.append({
+                    "title": link.text.strip(),
+                    "slug": ch_slug,
+                    "date": "-" # Tanggal ada di elemen span sebelah 'a', optional
+                })
+        
+        return {
+            "title": title,
+            "image": image,
+            "synopsis": synopsis,
+            "info": info,
+            "chapters": chapters
+        }
+    except Exception as e:
+        return {"error": str(e)}
 
 @app.get("/api/read/{slug}")
 async def read(slug: str):
-    # Baca Manga (V17 FIX: Filter lebih cerdas)
-    soup = fetch_smart(f"/ch/{slug}/")
+    # URL Baca: /series/judul-manga/chapter-slug/ (Seringkali langsung /chapter-slug/ di root)
+    # Shinigami sering pakai format: https://shinigami.asia/judul-chapter/
+    
+    # Kita coba fetch langsung ke root domain dengan slug chapter
+    soup = fetch_smart(f"/{slug}/")
+    
     if not soup: return {"error": "Not Found"}
     
     images = []
-    container = soup.select_one('#Baca_Komik')
-    if container:
-        for img in container.find_all('img'):
-            # Ambil semua kemungkinan src
-            src = img.get('src') or img.get('data-src') or img.get('onerror')
+    # Selector gambar baca di Madara Theme
+    img_container = soup.select('.reading-content img')
+    
+    for img in img_container:
+        src = img.get('data-src') or img.get('src')
+        if src:
+            src = src.strip().split(' ')[0] # Ambil URL bersih
+            if src.startswith("//"): src = "https:" + src
+            images.append(src)
             
-            # Bersihkan hack onerror
-            if src and "this.src" in src: src = src.split("'")[1]
-            
-            # V17 FIX: Fix URL relatif & filter sampah
-            if src:
-                full_url = fix_url(src)
-                # Filter gambar kecil/icon/logo
-                if "komiku.org" in full_url or "googleusercontent" in full_url or "cdn" in full_url:
-                    if "facebook" not in full_url and "twitter" not in full_url and "logo" not in full_url:
-                        images.append(full_url)
-                
     return {"images": images}
 
 @app.get("/api/menu-options")
 async def menu_options():
+    # Hardcoded genre Shinigami yang umum
     return {
-        "genres": [{"label": g.title(), "value": g} for g in ["action", "adventure", "comedy", "drama", "fantasy", "isekai", "romance", "slice-of-life"]],
-        "statuses": [{"label": "Semua", "value": ""}, {"label": "Ongoing", "value": "ongoing"}, {"label": "Completed", "value": "completed"}],
-        "types": [{"label": "Semua", "value": ""}, {"label": "Manga", "value": "manga"}, {"label": "Manhwa", "value": "manhwa"}, {"label": "Manhua", "value": "manhua"}],
-        "orders": [{"label": "Update", "value": "update"}, {"label": "Populer", "value": "popular"}, {"label": "Baru", "value": "date"}, {"label": "Acak", "value": "acak"}]
+        "genres": [
+            {"label": "Action", "value": "action"},
+            {"label": "Adventure", "value": "adventure"},
+            {"label": "Comedy", "value": "comedy"},
+            {"label": "Drama", "value": "drama"},
+            {"label": "Fantasy", "value": "fantasy"},
+            {"label": "Isekai", "value": "isekai"},
+            {"label": "Romance", "value": "romance"},
+            {"label": "Harem", "value": "harem"},
+            {"label": "Martial Arts", "value": "martial-arts"},
+            {"label": "Slice of Life", "value": "slice-of-life"}
+        ],
+        "orders": [
+            {"label": "Terupdate", "value": "update"},
+            {"label": "Populer", "value": "popular"},
+            {"label": "Judul A-Z", "value": "title"}
+        ]
     }
