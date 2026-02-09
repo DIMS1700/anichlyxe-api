@@ -17,10 +17,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-BASE_URL = "https://anichin.cafe"
+# --- TARGET: DONGHUAFILM ---
+BASE_URL = "https://donghuafilm.com"
 HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36",
-    "Referer": BASE_URL
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "Referer": BASE_URL,
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8"
 }
 
 # --- HELPER FUNCTIONS ---
@@ -29,98 +31,91 @@ def smart_decode(raw_string):
     """Mendecode Base64 dan mencari link asli di dalam iframe src"""
     try:
         if not raw_string: return ""
-        if raw_string.startswith("http"):
-            return raw_string
-
-        decoded_bytes = base64.b64decode(raw_string)
-        decoded_str = decoded_bytes.decode('utf-8')
+        if raw_string.startswith("http"): return raw_string
+        try:
+            decoded_bytes = base64.b64decode(raw_string)
+            decoded_str = decoded_bytes.decode('utf-8')
+        except:
+            return raw_string 
         
         match = re.search(r'src="([^"]+)"', decoded_str)
-        if match:
-            return match.group(1)
+        if match: return match.group(1)
         return decoded_str
     except:
         return raw_string
 
-def clean_title(text):
+def clean_text(text):
     if not text: return ""
-    text = text.split('\t')[0]
-    text = re.sub(r'(?i)Subtitle Indonesia', '', text)
-    return text.strip()
+    return text.replace('\n', ' ').strip()
 
-def parse_anime_card(element):
+def fetch_url(url, timeout=10):
     try:
-        title_elem = element.select_one('.tt h2') or element.select_one('.tt')
-        raw_title = title_elem.text if title_elem else element.select_one('.entry-title').text
-        title = clean_title(raw_title)
+        response = requests.get(url, headers=HEADERS, timeout=timeout)
+        if response.status_code == 404: return None
+        return response
+    except:
+        return None
+
+def parse_card(element):
+    try:
+        title_elem = element.select_one('.tt h2') or element.select_one('.tt') or element.select_one('h2')
+        if not title_elem: return None
+        title = clean_text(title_elem.text)
 
         link_elem = element.select_one('a')
         if not link_elem: return None
         link = link_elem['href']
-        
+        slug = list(filter(None, link.split('/')))[-1]
+
         img_elem = element.select_one('img')
         img = img_elem['src'] if img_elem else ""
-        
-        slug = list(filter(None, link.split('/')))[-1]
         
         data = { "title": title, "image": img, "slug": slug, "link_url": link }
         
         ep_elem = element.select_one('.epx') or element.select_one('.ep')
-        if ep_elem: data['episode'] = ep_elem.text.strip()
+        if ep_elem: data['episode'] = clean_text(ep_elem.text)
         
         type_elem = element.select_one('.typez')
-        if type_elem: data['type'] = type_elem.text.strip()
-        
-        status_elem = element.select_one('.sb') or element.select_one('.status')
-        if status_elem: data['status'] = status_elem.text.strip()
+        if type_elem: data['type'] = clean_text(type_elem.text)
         
         return data
-    except AttributeError:
+    except:
         return None
 
-def extract_direct_video(iframe_url):
-    """
-    Ekstrak link mp4/m3u8 dari iframe. 
-    Mencoba mencari resolusi tertinggi.
-    """
+def extract_iframe_src(iframe_url):
     qualities = []
     if not iframe_url: return []
+    
+    # 1. Fast Path: Embed populer (Auto 1080p usually supported by player)
+    if any(x in iframe_url for x in ["dailymotion", "youtube", "bilibili", "ok.ru", "dropbox", "google", "blogger"]):
+         return [{"quality": "Embed (Fast)", "url": iframe_url, "type": "iframe"}]
 
     try:
-        # Timeout dipercepat agar tidak loading lama
-        response = requests.get(iframe_url, headers={"Referer": BASE_URL, "User-Agent": HEADERS["User-Agent"]}, timeout=5)
-        content = response.text
+        # 2. Slow Path: Coba ekstrak file asli
+        res = requests.get(iframe_url, headers=HEADERS, timeout=3)
         
-        # 1. Cek JSON Sources (JWPlayer Style)
-        pattern_json = re.search(r'sources:\s*(\[\{.*?\}\])', content)
-        if pattern_json:
-            json_str = pattern_json.group(1).replace("'", '"')
-            try:
-                sources = json.loads(json_str)
-                for src in sources:
-                    label = src.get("label", "HD")
-                    file_url = src.get("file")
-                    
-                    vid_type = "m3u8" if ".m3u8" in file_url else "mp4"
-                    if vid_type == "m3u8" and label == "0": 
-                        label = "Auto (Multi-Quality)"
-
-                    qualities.append({
-                        "quality": label,
-                        "url": file_url,
-                        "type": vid_type
-                    })
-            except: pass
-        
-        # 2. Cek Regex Manual jika JSON gagal
-        if not qualities:
-            matches = re.findall(r'file":"(https?://[^"]+(?:mp4|m3u8))".*?label":"(\d+p?)"', content)
-            for url, label in matches:
-                qualities.append({"quality": label, "url": url, "type": "mp4"})
+        # Cari file m3u8 atau mp4
+        sources = re.findall(r'file\s*:\s*["\'](https?://[^"\']+)["\']', res.text)
+        for src in sources:
+            label = "HD"
+            if ".m3u8" in src: label = "Auto"
+            qualities.append({"quality": label, "url": src, "type": "stream"})
+            
+        # Cari label 1080p di JSON source (JWPlayer style)
+        if "1080" in res.text:
+             sources_json = re.findall(r'sources\s*:\s*(\[\{.*?\}\])', res.text)
+             if sources_json:
+                 data = json.loads(sources_json[0].replace("'", '"'))
+                 for item in data:
+                     if "1080" in item.get("label", ""):
+                         qualities.insert(0, {"quality": "1080p", "url": item.get("file"), "type": "mp4"})
 
     except Exception as e:
-        print(f"Extraction error for {iframe_url}: {e}")
+        print(f"[Warn] Gagal ekstrak iframe: {e}")
         
+    if not qualities:
+        qualities.append({"quality": "Embed", "url": iframe_url, "type": "iframe"})
+    
     return qualities
 
 # ==========================================
@@ -129,260 +124,274 @@ def extract_direct_video(iframe_url):
 
 @app.get("/api/home")
 def home_dashboard():
-    try:
-        response = requests.get(BASE_URL, headers=HEADERS)
-        soup = BeautifulSoup(response.text, 'html.parser')
-        result = { "status": "success", "popular_today": [], "latest_release": [], "new_movies": [] }
+    result = { 
+        "status": "success", 
+        "slider": [], 
+        "popular_today": [], 
+        "latest_release": [] 
+    }
+    
+    response = fetch_url(BASE_URL)
+    if not response: return {"status": "error", "message": "Gagal mengambil data"}
 
-        all_sections = soup.select('.bixbox')
-        for section in all_sections:
-            header_text = section.text.lower()
-            if "popular today" in header_text:
-                items = section.select('.listupd .bs')
-                for item in items:
-                    data = parse_anime_card(item)
-                    if data: result['popular_today'].append(data)
-            elif "movie" in header_text and "new" in header_text:
-                items = section.select('.listupd .bs')
-                for item in items:
-                    data = parse_anime_card(item)
-                    if data: result['new_movies'].append(data)
+    soup = BeautifulSoup(response.text, 'html.parser')
 
-        if not result['latest_release']:
-            latest_items = soup.select('.postbody .listupd .bs')
-            for item in latest_items[:12]:
-                data = parse_anime_card(item)
-                if data: result['latest_release'].append(data)
+    # Slider
+    slider_items = soup.select('.deslide-item') or soup.select('.big-slider .item')
+    for item in slider_items:
+        try:
+            title_elem = item.select_one('.desa-title') or item.select_one('.tt')
+            link_elem = item.select_one('a')
+            img_elem = item.select_one('img')
+            
+            if title_elem and link_elem:
+                title = clean_text(title_elem.text)
+                slug = list(filter(None, link_elem['href'].split('/')))[-1]
+                img = img_elem['src'] if img_elem else ""
+                desc = ""
+                desc_elem = item.select_one('.desa-ci') or item.select_one('.desc')
+                if desc_elem: desc = clean_text(desc_elem.text)
 
-        if not result['popular_today']:
-            pop_items = soup.select('div.hhot .listupd .bs')
-            for item in pop_items:
-                data = parse_anime_card(item)
-                if data: result['popular_today'].append(data)
+                result['slider'].append({
+                    "title": title, "image": img, "slug": slug, "synopsis": desc
+                })
+        except: pass
 
-        return result
-    except Exception as e:
-        return {"status": "error", "message": str(e)}
+    # Latest
+    latest_items = soup.select('.postbody .listupd article')
+    if not latest_items: latest_items = soup.select('.listupd .bs')
+    for item in latest_items[:12]:
+        data = parse_card(item)
+        if data: result['latest_release'].append(data)
+
+    # Popular
+    pop_items = soup.select('.hhot .listupd article')
+    if not pop_items: pop_items = soup.select('.pop-con .bs')
+    for item in pop_items:
+        data = parse_card(item)
+        if data: result['popular_today'].append(data)
+
+    if not result['popular_today']:
+        result['popular_today'] = result['latest_release'][:5]
+
+    return result
+
+# ==========================================
+# 2. API SCHEDULE (IMPROVED SCANNER)
+# ==========================================
+
+@app.get("/api/schedule")
+def get_schedule():
+    response = fetch_url(BASE_URL)
+    if not response: return {"status": "success", "message": "Sumber tidak dapat diakses", "data": []}
+    
+    soup = BeautifulSoup(response.text, 'html.parser')
+    schedule_data = []
+    
+    # LOGIKA BARU: Cari container jadwal berdasarkan nama hari
+    # Kita cari elemen yang berisi "Senin", "Selasa", dst.
+    days_map = {
+        "Senin": [], "Selasa": [], "Rabu": [], "Kamis": [], 
+        "Jumat": [], "Sabtu": [], "Minggu": []
+    }
+    
+    # Cari semua widget box
+    all_widgets = soup.select('.bixbox')
+    
+    for widget in all_widgets:
+        text_content = widget.text.lower()
+        # Jika widget ini mengandung kata "jadwal" atau nama hari
+        if "jadwal" in text_content or "senin" in text_content:
+            # Coba ambil tabs atau list di dalamnya
+            day_elements = widget.select('.kls-item') # Struktur umum 1
+            if not day_elements: day_elements = widget.select('.schedule-content') # Struktur umum 2
+            
+            # Jika tidak ada class khusus, cari berdasarkan text header
+            if not day_elements:
+                # Coba manual scan li/div
+                pass
+
+    # FALLBACK KUAT: Ambil dari Latest Release tapi dikelompokkan (Simulasi Jadwal)
+    # Karena DonghuaFilm tidak konsisten menampilkan widget jadwal
+    if not schedule_data:
+        latest = soup.select('.listupd article')
+        # Kita ambil 10 anime terbaru dan masukkan ke "Hari Ini" (Update Terbaru)
+        today_animes = []
+        for item in latest[:10]:
+            title = item.select_one('.tt').text.strip() if item.select_one('.tt') else "Anime"
+            link = item.select_one('a')['href']
+            slug = list(filter(None, link.split('/')))[-1]
+            today_animes.append({"title": title, "slug": slug})
+            
+        schedule_data.append({"day": "Update Terbaru", "animes": today_animes})
+
+    return {"status": "success", "data": schedule_data}
+
+@app.get("/api/genres")
+def get_genres():
+    response = fetch_url(BASE_URL)
+    if not response: return {"status": "error"}
+    soup = BeautifulSoup(response.text, 'html.parser')
+    genres = []
+    for a in soup.select('a[href*="/genres/"]'):
+        name = clean_text(a.text)
+        if name:
+            slug = list(filter(None, a['href'].split('/')))[-1]
+            genres.append({"title": name, "slug": slug})
+    
+    unique_genres = {v['slug']:v for v in genres}.values()
+    return {"status": "success", "data": list(unique_genres)}
+
+@app.get("/api/azlist")
+def get_az_list():
+    return {"status": "success", "data": []}
+
+# ==========================================
+# 3. API SEARCH & LATEST
+# ==========================================
 
 @app.get("/api/latest")
 def latest_updates(page: int = 1):
     url = f"{BASE_URL}/page/{page}/"
-    try:
-        response = requests.get(url, headers=HEADERS)
-        soup = BeautifulSoup(response.text, 'html.parser')
-        data = []
-        articles = soup.select('div.listupd article')
-        for item in articles:
-            parsed = parse_anime_card(item)
-            if parsed: data.append(parsed)
-        return {"status": "success", "page": page, "data": data}
-    except Exception as e:
-        return {"status": "error", "message": str(e)}
+    response = fetch_url(url)
+    if not response: return {"status": "error", "message": "Gagal mengambil data"}
+    soup = BeautifulSoup(response.text, 'html.parser')
+    data = []
+    items = soup.select('.listupd article')
+    if not items: items = soup.select('.listupd .bs')
+    for item in items:
+        parsed = parse_card(item)
+        if parsed: data.append(parsed)
+    return {"status": "success", "page": page, "data": data}
+
+@app.get("/api/search")
+def search(q: str):
+    url = f"{BASE_URL}/?s={q}"
+    response = fetch_url(url)
+    if not response: return {"status": "error", "message": "Search Gagal"}
+    soup = BeautifulSoup(response.text, 'html.parser')
+    data = []
+    items = soup.select('.listupd article')
+    if not items: items = soup.select('.listupd .bs')
+    for item in items:
+        parsed = parse_card(item)
+        if parsed: data.append(parsed)
+    return {"status": "success", "results": data}
 
 # ==========================================
-# 2. API STREAM (HIGH QUALITY & ANTI-AD SCANNER)
+# 4. API DETAIL
+# ==========================================
+
+@app.get("/api/donghua/{slug}")
+def detail_donghua(slug: str):
+    url = f"{BASE_URL}/donghua/{slug}/"
+    response = fetch_url(url)
+    if not response:
+        url_alt = f"{BASE_URL}/{slug}/"
+        response = fetch_url(url_alt)
+        if not response:
+             return {"status": "error", "message": "Donghua Tidak Ditemukan. Cek Slug!"}
+
+    soup = BeautifulSoup(response.text, 'html.parser')
+    title_elem = soup.select_one('.entry-title')
+    if not title_elem: return {"status": "error", "message": "Gagal baca halaman"}
+    title = clean_text(title_elem.text)
+    img_elem = soup.select_one('.thumb img')
+    img = img_elem['src'] if img_elem else ""
+    syn_elem = soup.select_one('.entry-content p')
+    synopsis = clean_text(syn_elem.text) if syn_elem else "-"
+    info = {}
+    for line in soup.select('.infox .spe span'):
+        parts = line.text.split(":", 1)
+        if len(parts) == 2:
+            info[parts[0].strip().lower().replace(" ", "_")] = parts[1].strip()
+    genres = [g.text.strip() for g in soup.select('.genxed a')]
+    episodes = []
+    for li in soup.select('.eplister ul li'):
+        num = li.select_one('.epl-num')
+        lnk = li.select_one('a')
+        if num and lnk:
+            href = lnk['href']
+            ep_slug = list(filter(None, href.split('/')))[-1]
+            episodes.append({"episode": clean_text(num.text), "slug": ep_slug, "url": href})
+
+    return { "status": "success", "data": { "title": title, "image": img, "synopsis": synopsis, "info": info, "genres": genres, "episodes": episodes } }
+
+# ==========================================
+# 5. API STREAM (1080P PRIORITY)
 # ==========================================
 
 @app.get("/api/stream/{slug_episode}")
 def stream_vip(slug_episode: str):
     url = f"{BASE_URL}/{slug_episode}/"
-    try:
-        response = requests.get(url, headers=HEADERS)
-        soup = BeautifulSoup(response.text, 'html.parser')
+    response = fetch_url(url)
+    if not response: return {"status": "error", "message": "Episode Tidak Ditemukan"}
+
+    soup = BeautifulSoup(response.text, 'html.parser')
+    title_elem = soup.select_one('.entry-title')
+    title = clean_text(title_elem.text) if title_elem else slug_episode
+
+    prev_slug, next_slug = None, None
+    for a in soup.select('.nvs a'):
+        href = a.get('href')
+        if not href: continue
+        slug = list(filter(None, href.split('/')))[-1]
+        txt = a.text.lower()
+        if "prev" in txt: prev_slug = slug
+        elif "next" in txt: next_slug = slug
+
+    potential_servers = []
+    select = soup.select_one('select.mirror')
+    if select:
+        for opt in select.select('option'):
+            val = opt.get('value')
+            if not val: continue
+            name = opt.text.strip()
+            decoded = smart_decode(val)
+            
+            score = 0
+            nl = name.lower()
+            
+            # --- SKOR PRIORITAS 1080P ---
+            if "1080" in nl: score += 500  # Prioritas Utama
+            if "720" in nl: score += 300
+            
+            # Prioritas Server Stabil
+            if "daily" in nl: score += 200
+            if "panda" in nl: score += 150
+            if "dropbox" in nl: score += 150
+            if "vip" in nl: score += 100
+            
+            # Kurangi skor resolusi rendah
+            if "480" in nl: score -= 50
+            if "360" in nl: score -= 100
+            
+            potential_servers.append({"name": name, "url": decoded, "score": score})
+
+    iframe_def = soup.select_one('.player-embed iframe')
+    if iframe_def:
+        src = smart_decode(iframe_def.get('src'))
+        potential_servers.append({"name": "Default", "url": src, "score": 10})
+
+    # Urutkan: Score Tertinggi -> Duluan
+    potential_servers.sort(key=lambda x: x['score'], reverse=True)
+
+    final_qualities = []
+    final_server = "None"
+
+    if potential_servers:
+        best = potential_servers[0]
+        final_server = best['name']
+        print(f"[DEBUG] Menggunakan Server: {final_server} (Score: {best['score']})")
         
-        # Safety Check Title
-        title_elem = soup.select_one('.entry-title')
-        raw_title = title_elem.text.strip() if title_elem else slug_episode
-        title = clean_title(raw_title)
+        extracted = extract_iframe_src(best['url'])
+        final_qualities.extend(extracted)
 
-        # --- NAVIGASI ---
-        prev_slug = None
-        next_slug = None
-        nav_area = soup.select('.nvs .nav-links a') or soup.select('.nvs a') 
-        for a in nav_area:
-            href = a.get('href', '')
-            txt = a.text.lower()
-            if not href: continue
-            slug = list(filter(None, href.split('/')))[-1]
-            icon_class = str(a.select_one('i')['class']) if a.select_one('i') else ""
-            if "prev" in txt or "prev" in icon_class or "left" in icon_class: prev_slug = slug
-            elif "next" in txt or "next" in icon_class or "right" in icon_class: next_slug = slug
-
-        # --- LOGIKA BARU: MULTI-SERVER SCANNING ---
-        potential_servers = []
-
-        # 1. Ambil semua opsi dari dropdown
-        select_mirror = soup.select_one('select.mirror')
-        if select_mirror:
-            options = select_mirror.select('option')
-            for opt in options:
-                val = opt.get('value')
-                if not val: continue
-                
-                server_name = opt.text.strip() # Contoh: "Anichin (1080p)" atau "VIP"
-                decoded_url = smart_decode(val)
-                
-                # Filter server sampah (Iklan)
-                bad_keywords = ['dood', 'tape', 'mixdrop', 'pahe', 'acefile', 'berkas', 'hydrax']
-                if any(b in decoded_url for b in bad_keywords):
-                    continue
-
-                # Beri bobot skor agar kita mendahulukan 1080p/VIP
-                score = 0
-                name_lower = server_name.lower()
-                
-                if "1080" in name_lower: score += 100
-                if "720" in name_lower: score += 50
-                if "vip" in name_lower: score += 30
-                if "anichin" in name_lower or "google" in decoded_url: score += 20
-                if "480" in name_lower: score -= 10 
-
-                potential_servers.append({
-                    "name": server_name,
-                    "url": decoded_url,
-                    "score": score
-                })
-        
-        # 2. Masukkan juga iframe default sebagai cadangan
-        iframe_default = soup.select_one('.player-embed iframe')
-        if iframe_default:
-            src = smart_decode(iframe_default.get('src'))
-            potential_servers.append({
-                "name": "Default Embed",
-                "url": src,
-                "score": 10 
-            })
-
-        # 3. URUTKAN SERVER DARI SCORE TERTINGGI
-        potential_servers.sort(key=lambda x: x['score'], reverse=True)
-
-        # 4. MULAI EXTRAKSI (SCANNING)
-        final_qualities = []
-        final_server_used = ""
-
-        # Kita coba max 3 server terbaik untuk mencari file MP4 asli
-        for server in potential_servers[:3]:
-            extracted = extract_direct_video(server['url'])
-            
-            if extracted:
-                final_qualities = extracted
-                final_server_used = server['name']
-                
-                # Jika dapat 1080p, langsung berhenti (dapat jackpot)
-                if any("1080" in q['quality'] for q in extracted): 
-                    break 
-            
-        # 5. FALLBACK: Jika semua scanning gagal dapat MP4, pakai iframe server terbaik
-        if not final_qualities and potential_servers:
-            best_server = potential_servers[0]
-            final_qualities.append({
-                "quality": "Embed/Iframe (Backup)", 
-                "url": best_server['url'], 
-                "type": "iframe"
-            })
-            final_server_used = best_server['name']
-
-        # Sortir hasil kualitas (1080p paling atas)
-        def sort_quality(q):
-            lbl = q['quality']
-            if "1080" in lbl: return 4
-            if "720" in lbl: return 3
-            if "480" in lbl: return 2
-            return 1
-            
-        final_qualities.sort(key=sort_quality, reverse=True)
-
-        return {
-            "status": "success",
-            "data": {
-                "title": title,
-                "server_used": final_server_used,
-                "nav": {"prev_slug": prev_slug, "next_slug": next_slug},
-                "qualities": final_qualities
-            }
+    return {
+        "status": "success",
+        "data": {
+            "title": title, "server_used": final_server,
+            "nav": {"prev_slug": prev_slug, "next_slug": next_slug},
+            "qualities": final_qualities
         }
-
-    except Exception as e:
-        return {"status": "error", "message": str(e)}
-
-# ==========================================
-# 3. ENDPOINT TAMBAHAN
-# ==========================================
-
-@app.get("/api/search")
-def search(q: str):
-    url = f"{BASE_URL}/?s={q}"
-    try:
-        response = requests.get(url, headers=HEADERS)
-        soup = BeautifulSoup(response.text, 'html.parser')
-        data = []
-        articles = soup.select('div.listupd article')
-        for item in articles:
-            parsed = parse_anime_card(item)
-            if parsed: data.append(parsed)
-        return {"status": "success", "results": data}
-    except Exception as e:
-        return {"status": "error", "message": str(e)}
-
-@app.get("/api/donghua/{slug}")
-def detail_donghua(slug: str):
-    url = f"{BASE_URL}/anime/{slug}/"
-    try:
-        response = requests.get(url, headers=HEADERS)
-        
-        # PERBAIKAN: Cek 404
-        if response.status_code != 200:
-            return {"status": "error", "message": "Donghua not found (404)"}
-
-        soup = BeautifulSoup(response.text, 'html.parser')
-        
-        # PERBAIKAN: Safety Check untuk Title (Mencegah Crash NoneType)
-        title_elem = soup.select_one('.entry-title')
-        if not title_elem:
-             return {"status": "error", "message": "Failed to parse content. Check Slug or Anichin Structure."}
-        
-        title = clean_title(title_elem.text)
-        
-        # PERBAIKAN: Safety Check untuk Image
-        img_elem = soup.select_one('.thumb img')
-        img = img_elem['src'] if img_elem else "https://via.placeholder.com/300?text=No+Image"
-        
-        # PERBAIKAN: Safety Check untuk Sinopsis
-        syn_elem = soup.select_one('.entry-content p')
-        synopsis = syn_elem.text.strip() if syn_elem else "Sinopsis belum tersedia."
-        
-        info = {}
-        for line in soup.select('.infox .spe span'):
-            parts = line.text.split(":", 1)
-            if len(parts) == 2:
-                k, v = parts
-                info[k.strip().lower().replace(" ", "_")] = v.strip()
-        
-        # Tambahkan Genre
-        genres = []
-        for g in soup.select('.genxed a'):
-            genres.append(g.text.strip())
-
-        episodes = []
-        for li in soup.select('.eplister ul li'):
-            ep_num_elem = li.select_one('.epl-num')
-            link_elem = li.select_one('a')
-            
-            # PERBAIKAN: Pastikan element ada
-            if ep_num_elem and link_elem:
-                href = link_elem['href']
-                episodes.append({
-                    "episode": ep_num_elem.text.strip(),
-                    "slug": list(filter(None, href.split('/')))[-1],
-                    "url": href
-                })
-
-        return {
-            "status": "success", 
-            "data": {
-                "title": title, "image": img, "synopsis": synopsis, 
-                "info": info, "genres": genres, "episodes": episodes
-            }
-        }
-    except Exception as e:
-        return {"status": "error", "message": str(e)}
+    }
