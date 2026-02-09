@@ -15,10 +15,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# KONFIGURASI DUA DOMAIN
+# KONFIGURASI DUA PINTU MASUK (Backdoor & Frontdoor)
 DOMAINS = [
-    "https://api.komiku.org",  # Prioritas 1
-    "https://komiku.org"       # Prioritas 2
+    "https://api.komiku.org",  # Prioritas 1: API (Lebih stabil)
+    "https://komiku.org"       # Prioritas 2: Main (Cadangan)
 ]
 
 # ==========================================
@@ -38,38 +38,45 @@ def get_scraper():
 scraper = get_scraper()
 
 # ==========================================
-# 🛠️ SMART FETCH
+# 🛠️ SMART FETCH (JANTUNGNYA API INI)
 # ==========================================
 def fetch_smart(path: str, params: str = ""):
+    """Mencoba semua domain sampai berhasil dapat data."""
     for domain in DOMAINS:
         url = f"{domain}{path}{params}"
         try:
+            # Sesuaikan header host
             host = domain.replace("https://", "")
             scraper.headers.update({'Authority': host})
             
             print(f"🔄 Mencoba: {url}")
-            response = scraper.get(url, timeout=15)
+            response = scraper.get(url, timeout=20)
             
             if response.status_code == 200:
                 soup = BeautifulSoup(response.text, "html.parser")
-                if soup.select('.bge') or soup.find('a', href=re.compile(r'/(manga|manhua|manhwa)/')):
+                # Validasi sederhana: Apakah ini halaman error/kosong?
+                # Kita cek keberadaan elemen kunci
+                if soup.select('.bge') or soup.select('#Baca_Komik') or soup.find('a', href=re.compile(r'/(manga|manhua|manhwa)/')):
                     print(f"✅ Sukses di: {domain}")
                     return soup
+            
             print(f"⚠️ Gagal/Kosong di: {domain}")
         except Exception as e:
             print(f"❌ Error {domain}: {e}")
+            
     return None
 
 # ==========================================
-# 🖼️ IMAGE PROXY (WAJIB ADA)
+# 🖼️ IMAGE PROXY (WAJIB BUAT GAMBAR)
 # ==========================================
 @app.get("/api/image")
 async def image_proxy(url: str):
     if not url or "placeholder" in url: return Response(status_code=404)
     try:
+        # Request gambar seolah-olah dari browser yang buka Komiku
         headers = {
             "Referer": "https://komiku.org/",
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
         }
         resp = requests.get(url, headers=headers, stream=True, timeout=10)
         if resp.status_code == 200:
@@ -79,7 +86,7 @@ async def image_proxy(url: str):
         return Response(status_code=500)
 
 # ==========================================
-# 🛠️ HELPER: PARSING V14 (FIX LAZY LOAD)
+# 🛠️ HELPER: PARSING DATA
 # ==========================================
 def parse_manga_item(item):
     try:
@@ -91,13 +98,13 @@ def parse_manga_item(item):
         slug = href.strip('/').split('/')[-1]
         if slug in ['manga', 'manhua', 'manhwa', 'genre', 'other', 'hot', 'populer']: return None
 
-        # 2. Gambar (FIX: PRIORITAS DATA-SRC)
+        # 2. Gambar (Ambil URL Asli, Proxy di Frontend)
         img = item.find('img')
         if not img and item.name == 'a': img = item.parent.find('img')
 
         image = "https://via.placeholder.com/150?text=No+Image"
         if img:
-            # V14 FIX: Ambil data-src dulu, baru src
+            # Prioritas data-src (Lazy Load)
             raw_img = img.get('data-src') or img.get('src')
             if raw_img:
                 image = raw_img.split('?')[0]
@@ -134,17 +141,19 @@ def parse_manga_item(item):
         return None
 
 # ==========================================
-# ENDPOINTS
+# ENDPOINTS UTAMA
 # ==========================================
 @app.get("/")
-async def root(): return {"status": "API V14 (Lazy Load Fix)", "docs": "/docs"}
+async def root(): return {"status": "API V15 (Final Complete)", "docs": "/docs"}
 
 @app.get("/api/home")
 async def get_home():
     soup = fetch_smart("/")
     if not soup: return []
+    
     data, seen = [], set()
     items = soup.select('.bge') or soup.find_all('a', href=re.compile(r'/(manga|manhua|manhwa)/'))
+    
     for item in items:
         if item.text.strip().startswith('#'): continue
         manga = parse_manga_item(item)
@@ -158,7 +167,9 @@ async def get_home():
 @app.get("/api/popular")
 async def get_popular():
     soup = fetch_smart("/other/hot/")
-    if not soup or not soup.select('.bge'): soup = fetch_smart("/daftar-komik/", "?orderby=popular")
+    if not soup or not soup.select('.bge'):
+        soup = fetch_smart("/daftar-komik/", "?orderby=popular")
+
     data, seen = [], set()
     if soup:
         items = soup.select('.bge')
@@ -174,6 +185,7 @@ async def get_popular():
 async def search(query: str):
     clean_query = query.replace(" ", "+")
     soup = fetch_smart("/", f"?post_type=manga&s={clean_query}")
+    
     data, seen = [], set()
     if soup:
         items = soup.select('.bge') or soup.find_all('a', href=re.compile(r'/(manga|manhua|manhwa)/'))
@@ -188,20 +200,26 @@ async def search(query: str):
 async def get_list(page: int = 1, genre: str = None, status: str = None, type: str = None, order: str = None):
     is_random = (order == "acak")
     if is_random: order = "update"
-    base_url = f"{API_DOMAIN}/daftar-komik/"
-    if page > 1: base_url += f"page/{page}/"
-    params = []
-    if genre: params.append(f"genre={genre}")
-    if status: params.append(f"status={'end' if status == 'completed' else status}")
-    if type: params.append(f"tipe={type}")
-    if order: params.append(f"orderby={order}")
-    query = "&".join(params)
-    url_target = f"{base_url}?{query}" if params else base_url
-    soup = fetch_html(url_target)
-    if (not soup or not soup.select('.bge')) and genre:
-        path_url = f"{API_DOMAIN}/genre/{genre}/"
-        if page > 1: path_url += f"page/{page}/"
-        soup = fetch_html(path_url)
+
+    # URL Builder
+    path = ""
+    query_params = ""
+    
+    if genre:
+        path = f"/genre/{genre}/"
+        if page > 1: path += f"page/{page}/"
+    else:
+        path = "/daftar-komik/"
+        if page > 1: path += f"page/{page}/"
+        params = []
+        if status: params.append(f"status={'end' if status == 'completed' else status}")
+        if type: params.append(f"tipe={type}")
+        if order: params.append(f"orderby={order}")
+        if params: query_params = "?" + "&".join(params)
+
+    soup = fetch_smart(path, query_params)
+    if not soup: return []
+
     data, seen = [], set()
     if soup:
         candidates = soup.select('.bge, .kan, .daftar .item') or soup.find_all('a', href=re.compile(r'/(manga|manhua|manhwa)/'))
@@ -211,44 +229,66 @@ async def get_list(page: int = 1, genre: str = None, status: str = None, type: s
                 if manga['title'].startswith('#'): continue
                 seen.add(manga['slug'])
                 data.append(manga)
+    
     if is_random: random.shuffle(data)
     return data
 
 @app.get("/api/detail/{slug}")
 async def detail(slug: str):
+    # Detail pakai Smart Fetch juga (Penting!)
     soup = fetch_smart(f"/manga/{slug}/")
     if not soup: return {"error": "Not Found"}
+    
     try:
         h1 = soup.find('h1')
         title = h1.text.strip() if h1 else slug
         title = re.sub(r'(Baca|Komik|Manga|Manhwa|Manhua)\s?', '', title, flags=re.IGNORECASE).strip()
+        
         img = soup.select_one('.sd-img img')
         image = img.get('src').split('?')[0] if img else ""
+        
         desc = soup.select_one('.desc, .sinopsis, #Sinopsis')
         synopsis = desc.get_text(strip=True) if desc else ""
-        info = {}
-        for row in soup.select('.inftable tr'):
-            cols = row.find_all('td')
-            if len(cols) == 2: info[cols[0].text.replace(':', '').strip()] = cols[1].text.strip()
-        chapters, seen_ch = [], set()
+        
+        # Ambil Chapter List
+        chapters = []
         links = soup.find_all('a', href=re.compile(r'/(ch|chapter)/'))
+        seen_ch = set()
+        
         for link in links:
-            ch_slug = link.get('href').strip('/').split('/')[-1]
+            href = link.get('href')
+            ch_slug = href.strip('/').split('/')[-1]
+            # Validasi slug chapter agar tidak loop ke manga
             if ch_slug == slug or ch_slug in seen_ch: continue
+            
             seen_ch.add(ch_slug)
-            chapters.append({"title": link.text.strip(), "slug": ch_slug, "date": "-"})
-        return {"title": title, "image": image, "synopsis": synopsis, "info": info, "chapters": chapters}
+            chapters.append({
+                "title": link.text.strip(),
+                "slug": ch_slug,
+                "date": "-"
+            })
+            
+        return {"title": title, "image": image, "synopsis": synopsis, "chapters": chapters}
     except Exception as e: return {"error": str(e)}
 
 @app.get("/api/read/{slug}")
 async def read(slug: str):
+    # Baca pakai Smart Fetch (Penting!)
     soup = fetch_smart(f"/ch/{slug}/")
     if not soup: return {"error": "Not Found"}
+    
     images = []
-    for img in soup.select('#Baca_Komik img'):
-        src = img.get('src') or img.get('onerror')
-        if src and "this.src" in src: src = src.split("'")[1]
-        if src and src.startswith('http'): images.append(src)
+    # Selector untuk gambar chapter
+    container = soup.select_one('#Baca_Komik')
+    if container:
+        for img in container.find_all('img'):
+            src = img.get('src') or img.get('data-src') or img.get('onerror')
+            # Bersihkan hack onerror
+            if src and "this.src" in src: src = src.split("'")[1]
+            
+            if src and src.startswith('http'):
+                images.append(src)
+                
     return {"images": images}
 
 @app.get("/api/menu-options")
