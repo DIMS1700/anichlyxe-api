@@ -16,13 +16,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# PINDAH KE SUMBER BARU
+# SUMBER BARU
 BASE_URL = "https://animechina.my.id"
 
 async def fetch_url(url):
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
-        "Referer": BASE_URL
+        "Referer": BASE_URL,
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
     }
     try:
         async with httpx.AsyncClient(http2=True, follow_redirects=True, timeout=20.0) as client:
@@ -31,13 +32,13 @@ async def fetch_url(url):
                 return response
             return None
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"Fetch Error: {e}")
         return None
 
 # --- HELPER ---
 def encode_slug(url_path):
     try:
-        # Menghapus domain dan folder 'anime' atau 'episode' agar slug bersih
+        # Membersihkan domain agar jadi slug yang aman
         clean = url_path.replace(BASE_URL, "").strip("/")
         return clean.replace("/", "__")
     except: return url_path
@@ -50,26 +51,26 @@ def decode_slug(safe_slug):
 @app.get("/api/home")
 async def get_home():
     res = await fetch_url(BASE_URL)
-    if not res: return {"status": "error", "message": "Gagal mengambil data dari AnimeChina"}
+    if not res: return {"status": "error", "message": "Gagal akses AnimeChina"}
     
     soup = BeautifulSoup(res.text, 'html.parser')
     
-    # 1. Slider / Featured (Biasanya ada di top)
+    # 1. Featured / Slider
     featured = []
-    for item in soup.select('.desclatest')[:5]: # Selector umum untuk slider donghua
+    for item in soup.select('.desclatest')[:5]:
         featured.append({
             "title": item.select_one('h2').text.strip() if item.select_one('h2') else "No Title",
             "image": item.select_one('img')['src'] if item.select_one('img') else "",
             "slug": encode_slug(item.select_one('a')['href']) if item.select_one('a') else ""
         })
 
-    # 2. Latest Updates (Donghua Terbaru)
+    # 2. Latest Donghua
     latest = []
     for item in soup.select('.listupd .bs'):
         latest.append({
             "title": item.select_one('.tt').text.strip() if item.select_one('.tt') else "No Title",
             "image": item.select_one('img')['src'] if item.select_one('img') else "",
-            "episode": item.select_one('.epx').text.strip() if item.select_one('.epx') else "Full",
+            "episode": item.select_one('.epx').text.strip() if item.select_one('.epx') else "N/A",
             "slug": encode_slug(item.select_one('a')['href'])
         })
 
@@ -97,17 +98,15 @@ async def search(q: str):
 @app.get("/api/donghua/{slug}")
 async def get_detail(slug: str):
     real_path = decode_slug(slug)
-    # Cek apakah path mengandung 'anime' atau 'donghua'
-    url = f"{BASE_URL}/{real_path}"
-    res = await fetch_url(url)
+    res = await fetch_url(f"{BASE_URL}/{real_path}")
     if not res: return {"status": "error", "message": "Detail tidak ditemukan"}
     
     soup = BeautifulSoup(res.text, 'html.parser')
     
-    # Metadata
+    # Metadata extraction
     info = {}
-    for entry in soup.select('.info-content .spe span'):
-        text = entry.text.strip()
+    for span in soup.select('.info-content .spe span'):
+        text = span.get_text(strip=True)
         if ":" in text:
             key, val = text.split(":", 1)
             info[key.strip().lower().replace(" ", "_")] = val.strip()
@@ -130,7 +129,7 @@ async def get_detail(slug: str):
             "image": soup.select_one('.thumb img')['src'] if soup.select_one('.thumb img') else "",
             "synopsis": soup.select_one('.entry-content p').text.strip() if soup.select_one('.entry-content p') else "",
             "info": info,
-            "episodes": episodes # Biasanya sudah terurut dari terbaru
+            "episodes": episodes
         }
     }
 
@@ -142,26 +141,14 @@ async def get_stream(slug_episode: str):
     
     soup = BeautifulSoup(res.text, 'html.parser')
     
-    # Mirror Extractor
-    mirrors = []
-    # Mencari opsi server di dropdown atau list
-    for opt in soup.select('.mirroroption option'):
-        val = opt.get('value')
-        if val:
-            # Di situs ini biasanya butuh decode atau ambil ID player
-            mirrors.append({
-                "server": opt.text.strip(),
-                "id": val
-            })
-
-    # Jika tidak ada dropdown, cari iframe langsung
-    iframe = soup.select_one('#embed_holder iframe') or soup.select_one('.video-content iframe')
+    # Mencari iframe video
+    iframe = soup.select_one('.video-content iframe') or soup.select_one('#embed_holder iframe')
     video_url = iframe['src'] if iframe else ""
 
     return {
         "status": "success",
         "data": {
             "video_url": video_url,
-            "mirrors": mirrors
+            "title": soup.select_one('.entry-title').text.strip() if soup.select_one('.entry-title') else "Streaming"
         }
     }
