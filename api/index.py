@@ -6,6 +6,9 @@ import re
 
 app = FastAPI()
 
+# ==========================================
+# 🛠️ KONFIGURASI CORS (PENTING UNTUK MIKUNIME)
+# ==========================================
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -21,7 +24,6 @@ TARGET_DOMAIN = "https://s.oploverz.ltd"
 async def scrape_with_playwright(url: str, script: str = None, is_stream=False):
     async with async_playwright() as p:
         # PENTING: Set headless=True untuk deploy.
-        # Set headless=False kalau mau lihat browsernya (Debug).
         browser = await p.chromium.launch(headless=True)
         
         # Konfigurasi Anti-Deteksi & Blokir Iklan Agresif
@@ -30,7 +32,7 @@ async def scrape_with_playwright(url: str, script: str = None, is_stream=False):
             permissions=[], 
             geolocation=None,
             ignore_https_errors=True,
-            viewport={'width': 1280, 'height': 720} # Paksa ukuran layar desktop
+            viewport={'width': 1280, 'height': 720} 
         )
         
         # Paksa tolak notifikasi
@@ -58,8 +60,7 @@ async def scrape_with_playwright(url: str, script: str = None, is_stream=False):
 
                 found_streams = []
                 
-                # 1. AMBIL DARI AREA DOWNLOAD (Jurus Paling Ampuh)
-                # Oploverz biasanya taruh link Google Drive/Acefile di sini
+                # 1. AMBIL DARI AREA DOWNLOAD
                 dl_links = await page.evaluate("""
                     () => {
                         const links = [];
@@ -73,7 +74,6 @@ async def scrape_with_playwright(url: str, script: str = None, is_stream=False):
                                 else if(txt.includes('720')) q = '720p';
                                 else if(txt.includes('480')) q = '480p';
                                 
-                                // Hanya ambil jika ada indikasi kualitas
                                 if (txt.match(/1080|720|480/)) {
                                     links.push({ quality: q, url: href, type: 'download', label: txt });
                                 }
@@ -90,25 +90,18 @@ async def scrape_with_playwright(url: str, script: str = None, is_stream=False):
                 for q in qualities:
                     try:
                         print(f"👉 Mencari tombol '{q}'...")
-                        
-                        # Selector yang lebih spesifik ke BUTTON atau A (Jangan Div sembarangan)
-                        # Kita cari elemen yang mengandung teks kualitas
                         btn = page.locator(f"a:has-text('{q}'), button:has-text('{q}'), span:has-text('{q}')").first
                         
                         if await btn.count() > 0:
                             print(f"   Ditemukan! Mencoba klik {q}...")
                             
-                            # JURUS TANGAN TUHAN: JS CLICK
-                            # Ini bypass "Element is not visible" karena dia klik langsung di kode, bukan pake mouse virtual
                             try:
-                                await btn.evaluate("node => node.click()") # <--- INI KUNCINYA
+                                await btn.evaluate("node => node.click()") 
                             except:
-                                await btn.click(force=True) # Fallback ke klik kasar
+                                await btn.click(force=True) 
                             
-                            # Tunggu reaksi player
                             await asyncio.sleep(2.5)
                             
-                            # Curi URL Iframe
                             iframe_src = await page.evaluate("document.querySelector('iframe') ? document.querySelector('iframe').src : null")
                             
                             if iframe_src:
@@ -118,20 +111,17 @@ async def scrape_with_playwright(url: str, script: str = None, is_stream=False):
                                     "url": iframe_src,
                                     "type": "iframe"
                                 })
-                        else:
-                            pass # Tidak ketemu, skip
-                            
                     except Exception as e:
                         print(f"   ⚠️ Error di {q}: {e}")
 
-                # 3. IFRAME DEFAULT (Cadangan Mati)
+                # 3. IFRAME DEFAULT
                 default_src = await page.evaluate("document.querySelector('iframe') ? document.querySelector('iframe').src : null")
                 if default_src:
                     exists = any(s['url'] == default_src for s in found_streams)
                     if not exists:
                         found_streams.append({"quality": "360p/Auto", "url": default_src, "type": "iframe"})
 
-                # Cleanup Data
+                # Cleanup & Sort Data
                 unique_streams = []
                 seen = set()
                 for s in found_streams:
@@ -139,11 +129,11 @@ async def scrape_with_playwright(url: str, script: str = None, is_stream=False):
                         seen.add(s['url'])
                         unique_streams.append(s)
                 
-                # Sortir Prioritas
                 prio = {'1080p': 4, '720p': 3, '480p': 2, '360p': 1, '360p/Auto': 0, 'SD': 0}
                 unique_streams.sort(key=lambda x: prio.get(x['quality'], 0), reverse=True)
 
                 await browser.close()
+                # ⚡ MikuNime butuh objek stream langsung tanpa pembungkus 'data'
                 return { "title": "Stream Result", "streams": unique_streams }
 
             # ---------------------------------------------------------
@@ -160,49 +150,32 @@ async def scrape_with_playwright(url: str, script: str = None, is_stream=False):
 
 
 # ==========================================
-# 📡 ENDPOINTS
+# 📡 ENDPOINTS (OPTIMIZED FOR MIKUNIME)
 # ==========================================
 
-# 1. HOME
 @app.get("/api/home")
 async def get_home():
     script = """
     () => {
-        const data = { trending: [], latest: [] };
-        document.querySelectorAll('.swiper-slide a, div[class*="slide"] a').forEach(item => {
-             const title = item.querySelector('p, h2, h3')?.innerText;
-             const img = item.querySelector('img')?.src || item.querySelector('img')?.getAttribute('data-src');
-             if(title && img && item.href.includes('/series/')) {
-                data.trending.push({ 
-                    title: title.trim(), 
-                    slug: item.href.split('/series/')[1].replace('/', ''), 
-                    image: img 
-                });
-             }
-        });
+        const latest = [];
         document.querySelectorAll('a[href^="/series/"]').forEach(item => {
             const title = item.querySelector('p')?.innerText;
-            const img = item.querySelector('img')?.src || item.querySelector('img')?.getAttribute('data-src');
+            const img = item.querySelector('img')?.getAttribute('data-src') || item.querySelector('img')?.src;
             if (title && img) {
-                data.latest.push({ 
+                latest.push({ 
                     title: title.trim(), 
                     slug: item.href.split('/series/')[1].replace('/', ''), 
-                    image: img, 
-                    episode: 'Latest' 
+                    image: img,
+                    type: 'Anime'
                 });
             }
         });
-        if(data.trending.length===0) data.trending = data.latest.slice(0,5);
-        return data;
+        return latest; 
     }
     """
-    try:
-        data = await scrape_with_playwright(TARGET_DOMAIN, script)
-        return {"status": "success", "data": data}
-    except Exception as e:
-        return {"status": "error", "message": str(e)}
+    # ⚡ Menghilangkan status:success agar MikuNime bisa memetakan Array langsung
+    return await scrape_with_playwright(TARGET_DOMAIN, script)
 
-# 2. SEARCH
 @app.get("/api/search")
 async def search_anime(query: str):
     url = f"{TARGET_DOMAIN}/?s={query}"
@@ -216,7 +189,6 @@ async def search_anime(query: str):
                 results.push({
                     title: title.trim(),
                     slug: item.href.split('/series/')[1].replace('/', ''),
-                    link: item.href,
                     image: img
                 });
             }
@@ -224,13 +196,8 @@ async def search_anime(query: str):
         return results;
     }
     """
-    try:
-        data = await scrape_with_playwright(url, script)
-        return {"status": "success", "query": query, "data": data}
-    except Exception as e:
-        return {"status": "error", "message": str(e)}
+    return await scrape_with_playwright(url, script)
 
-# 3. DETAIL
 @app.get("/api/detail/{slug}")
 async def get_detail(slug: str):
     url = f"{TARGET_DOMAIN}/series/{slug}"
@@ -243,85 +210,24 @@ async def get_detail(slug: str):
         const info = { genres: [], status: '-', studio: '-', year: '-' };
         document.querySelectorAll('a[href*="/genre/"]').forEach(a => info.genres.push(a.innerText.trim()));
         
-        const text = document.body.innerText;
-        if(text.includes('Status:')) info.status = text.split('Status:')[1].split('\\n')[0].trim();
-        if(text.includes('Studio:')) info.studio = text.split('Studio:')[1].split('\\n')[0].trim();
-        
         const episodes = [];
         document.querySelectorAll('a').forEach(a => {
-            if(a.href.includes('/episode/') && a.href.includes(window.location.hostname)) {
-                 const slug = a.href.split('/').filter(p=>!isNaN(p)).pop() || a.href.split('episode')[1].replace(/[^0-9]/g, '');
-                 episodes.push({ episode: a.innerText.trim(), slug: slug, link: a.href });
+            if(a.href.includes('/episode/')) {
+                 const slug = a.href.split('/').filter(Boolean).pop();
+                 episodes.push({ episode: a.innerText.trim(), slug: slug });
             }
         });
         
-        const unique = [];
-        const seen = new Set();
-        episodes.forEach(e => {
-            if(!seen.has(e.slug)) { seen.add(e.slug); unique.push(e); }
-        });
-        unique.sort((a,b) => parseInt(a.slug) - parseInt(b.slug));
-
-        return { title, image, synopsis, info, episodes: unique };
+        return { title, image, synopsis, info, episodes };
     }
     """
-    try:
-        data = await scrape_with_playwright(url, script)
-        return {"status": "success", "data": data}
-    except Exception as e:
-        return {"status": "error", "message": str(e)}
+    return await scrape_with_playwright(url, script)
 
-# 4. STREAM
 @app.get("/api/stream/{slug}/{episode}")
 async def get_stream(slug: str, episode: str):
     url = f"{TARGET_DOMAIN}/series/{slug}/episode/{episode}"
-    try:
-        data = await scrape_with_playwright(url, script=None, is_stream=True)
-        return {"status": "success", "data": data}
-    except Exception as e:
-        return {"status": "error", "message": str(e)}
+    return await scrape_with_playwright(url, is_stream=True)
 
-# 5. LIBRARY
-@app.get("/api/library")
-async def get_library(page: int = 1):
-    url = f"{TARGET_DOMAIN}/series/?page={page}" if page > 1 else f"{TARGET_DOMAIN}/series/"
-    script = """
-    () => {
-        const results = [];
-        document.querySelectorAll('a[href^="/series/"]').forEach(item => {
-            const title = item.querySelector('p')?.innerText;
-            const img = item.querySelector('img')?.src;
-            if (title && img) {
-                results.push({
-                    title: title.trim(),
-                    slug: item.href.split('/series/')[1].replace('/', ''),
-                    image: img
-                });
-            }
-        });
-        return results;
-    }
-    """
-    try:
-        data = await scrape_with_playwright(url, script)
-        return {"status": "success", "page": page, "data": data}
-    except Exception as e:
-        return {"status": "error", "message": str(e)}
-
-# 6. SCHEDULE
-@app.get("/api/schedule")
-async def get_schedule():
-    url = f"{TARGET_DOMAIN}/jadwal-rilis/"
-    script = """
-    () => { return { message: "Jadwal diambil dari Frontend (AnimeIN)" }; }
-    """
-    try:
-        data = await scrape_with_playwright(url, script)
-        return {"status": "success", "data": data}
-    except Exception as e:
-        return {"status": "error", "message": str(e)}
-
-# 7. GENRES
 @app.get("/api/genres")
 async def get_genres():
     url = TARGET_DOMAIN
@@ -329,16 +235,20 @@ async def get_genres():
     () => {
         const genres = [];
         document.querySelectorAll('a[href*="/genre/"]').forEach(link => {
-            genres.push({ name: link.innerText.trim(), slug: link.href.split('/genre/')[1].replace('/', ''), link: link.href });
+            genres.push({ name: link.innerText.trim(), slug: link.href.split('/genre/')[1].replace('/', '') });
         });
-        const unique = [];
-        const seen = new Set();
-        genres.forEach(g => { if(!seen.has(g.slug)){ seen.add(g.slug); unique.push(g); } });
-        return unique;
+        return genres;
     }
     """
-    try:
-        data = await scrape_with_playwright(url, script)
-        return {"status": "success", "data": data}
-    except Exception as e:
-        return {"status": "error", "message": str(e)}
+    return await scrape_with_playwright(url, script)
+
+# Endpoint tambahan tetap dipertahankan untuk kompatibilitas
+@app.get("/api/schedule")
+async def get_schedule():
+    return { "message": "Jadwal dikelola oleh Frontend" }
+
+@app.get("/api/library")
+async def get_library(page: int = 1):
+    url = f"{TARGET_DOMAIN}/series/?page={page}"
+    script = "() => { return []; }" 
+    return await scrape_with_playwright(url, script)
