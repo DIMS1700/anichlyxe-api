@@ -4,9 +4,11 @@ import requests
 from bs4 import BeautifulSoup
 import re
 import base64
+import random
 
 app = FastAPI()
 
+# --- CORS CONFIGURATION ---
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -15,37 +17,19 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Gunakan domain v13 atau ganti ke kuramanime.net jika masih error
+# Gunakan v13 atau ganti ke kuramanime.net jika v13 tidak merespon
 BASE_URL = "https://v13.kuramanime.tel"
 
-# Headers diperlengkap agar mirip browser asli 100%
-HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
-    "Accept-Language": "id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7",
-    "Referer": "https://www.google.com/",
-    "Connection": "keep-alive",
-    "Upgrade-Insecure-Requests": "1"
-}
+# Daftar User-Agent untuk menghindari deteksi bot
+USER_AGENTS = [
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Edge/121.0.0.0"
+]
 
-def fetch_url(url):
-    """Mengambil data dengan penanganan error yang lebih kuat"""
-    try:
-        session = requests.Session()
-        # Menggunakan timeout lebih lama dan allow_redirects
-        response = session.get(url, headers=HEADERS, timeout=20, allow_redirects=True)
-        
-        if response.status_code == 200:
-            return response
-        
-        # Jika kena blokir (403 atau 503), log akan muncul di Vercel
-        print(f"Gagal akses: {url} - Status: {response.status_code}")
-        return None
-    except Exception as e:
-        print(f"Error Koneksi: {e}")
-        return None
+# --- HELPER FUNCTIONS ---
 
-# --- FUNGSI HELPER ---
 def encode_slug(url_path):
     try:
         clean = url_path.replace(BASE_URL, "").replace("/anime/", "").strip("/")
@@ -55,11 +39,32 @@ def encode_slug(url_path):
 def decode_slug(safe_slug):
     return safe_slug.replace("__", "/")
 
+def fetch_url(url):
+    """Fungsi stealth: Coba 3 kali dengan identitas berbeda jika gagal"""
+    for i in range(3):
+        try:
+            session = requests.Session()
+            headers = {
+                "User-Agent": random.choice(USER_AGENTS),
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+                "Accept-Language": "id-ID,id;q=0.9,en-US;q=0.8",
+                "Referer": "https://www.google.com/",
+                "Connection": "keep-alive",
+                "Upgrade-Insecure-Requests": "1"
+            }
+            response = session.get(url, headers=headers, timeout=12, allow_redirects=True)
+            if response.status_code == 200:
+                return response
+        except:
+            continue
+    return None
+
 def parse_anime_item(item):
     try:
         a_tag = item.select_one('h5 a')
         img_tag = item.select_one('.product__item__pic')
         ep_tag = item.select_one('.ep') or item.select_one('ul li')
+        
         return {
             "title": a_tag.text.strip() if a_tag else "No Title",
             "slug": encode_slug(a_tag['href']) if a_tag else "",
@@ -73,37 +78,67 @@ def parse_anime_item(item):
 @app.get("/api/home")
 def get_home():
     res = fetch_url(BASE_URL)
-    if not res: 
-        return {"status": "error", "message": "Source down - Terblokir Cloudflare"}
+    if not res: return {"status": "error", "message": "Source down"}
     
     soup = BeautifulSoup(res.text, 'html.parser')
+    
+    # 1. Slider
     slider = []
     for item in soup.select('.hero__items'):
+        title = item.select_one('h2').text.strip() if item.select_one('h2') else ""
         link = item.select_one('a')
         if link:
             slider.append({
-                "title": item.select_one('h2').text.strip() if item.select_one('h2') else "",
+                "title": title,
                 "image": item['data-setbg'] if 'data-setbg' in item.attrs else "",
-                "slug": encode_slug(link['href'])
+                "slug": encode_slug(link['href']),
+                "desc": item.select_one('p').text.strip() if item.select_one('p') else ""
             })
 
+    # 2. Popular Today
+    popular = []
+    for item in soup.select('.filter__gallery .product__item')[:6]:
+        data = parse_anime_item(item)
+        if data: popular.append(data)
+
+    # 3. Latest Release
     latest = []
     for item in soup.select('.product__item')[:12]:
         data = parse_anime_item(item)
         if data: latest.append(data)
 
-    return {"status": "success", "slider": slider, "latest_release": latest}
+    return {
+        "status": "success",
+        "slider": slider,
+        "popular_today": popular if popular else latest[:5],
+        "latest_release": latest
+    }
 
 @app.get("/api/search")
 def search(q: str):
     res = fetch_url(f"{BASE_URL}/anime?search={q}&order_by=latest")
-    if not res: return {"status": "error"}
+    if not res: return {"status": "error", "message": "Search unavailable"}
+    
     soup = BeautifulSoup(res.text, 'html.parser')
     results = []
     for item in soup.select('.product__item'):
         data = parse_anime_item(item)
         if data: results.append(data)
     return {"status": "success", "results": results}
+
+@app.get("/api/genres")
+def get_genres():
+    res = fetch_url(f"{BASE_URL}/properties/genre")
+    if not res: return {"status": "error"}
+    
+    soup = BeautifulSoup(res.text, 'html.parser')
+    genres = []
+    for a in soup.select('.genre__list a'):
+        genres.append({
+            "title": a.text.strip(),
+            "slug": a['href'].split('/')[-1]
+        })
+    return {"status": "success", "data": genres}
 
 @app.get("/api/donghua/{slug}")
 def get_detail(slug: str):
@@ -115,34 +150,50 @@ def get_detail(slug: str):
     soup = BeautifulSoup(res.text, 'html.parser')
     anime_id = real_path.split('/')[0]
     
+    # Metadata & Genres
     info = {}
+    genres = []
     for li in soup.select('.anime__details__widget ul li'):
         text = li.get_text(separator=":", strip=True)
-        if ":" in text:
+        if "Genre" in text:
+            genres = [g.text.strip() for g in li.select('a')]
+        elif ":" in text:
             parts = text.split(":", 1)
             info[parts[0].strip().lower().replace(" ", "_")] = parts[1].strip()
 
+    # Regex Hunter (Episodes)
     episodes = []
-    # Menggunakan Regex Hunter agar episode tidak kosong
-    found_links = re.findall(r'href=["\']([^"\']+/episode/(\d+))["\']', res.text)
+    pattern = r'href=["\']([^"\']+' + re.escape(anime_id) + r'/[^"\']+/episode/(\d+))["\']'
+    found_links = re.findall(pattern, res.text)
+    
     seen = set()
     for link, ep_num in found_links:
-        if anime_id in link and link not in seen:
+        if link not in seen:
             seen.add(link)
             clean_link = link.replace(BASE_URL, "").replace("/anime/", "").strip("/")
             episodes.append({
                 "episode": f"Episode {ep_num}",
+                "episode_number": ep_num,
                 "slug": clean_link.replace("/", "__"),
             })
+
+    # Recommendations
+    related = []
+    for item in soup.select('.anime__details__sidebar .product__item'):
+        data = parse_anime_item(item)
+        if data: related.append(data)
 
     return {
         "status": "success",
         "data": {
             "title": soup.select_one('.anime__details__title h3').text.strip() if soup.select_one('.anime__details__title h3') else "Anime",
+            "japanese_title": soup.select_one('.anime__details__title span').text.strip() if soup.select_one('.anime__details__title span') else "",
             "image": soup.select_one('.anime__details__pic')['data-setbg'] if soup.select_one('.anime__details__pic') else "",
-            "synopsis": soup.select_one('.anime__details__text p').text.strip() if soup.select_one('.anime__details__text p') else "",
-            "info": info,
-            "episodes": sorted(episodes, key=lambda x: int(re.search(r'\d+', x['episode']).group()), reverse=True)
+            "synopsis": soup.select_one('.anime__details__text p').get_text(strip=True) if soup.select_one('.anime__details__text p') else "",
+            "genres": genres,
+            "metadata": info,
+            "episodes": sorted(episodes, key=lambda x: int(x['episode_number']), reverse=True),
+            "related_anime": related
         }
     }
 
@@ -155,6 +206,7 @@ def get_stream(slug_episode: str):
     
     soup = BeautifulSoup(res.text, 'html.parser')
     qualities = []
+    
     servers = soup.select('select#changeServer option')
     for opt in servers:
         val = opt.get('value')
@@ -169,4 +221,24 @@ def get_stream(slug_episode: str):
             except:
                 qualities.append({"quality": opt.text.strip(), "url": val})
 
-    return {"status": "success", "data": {"qualities": qualities}}
+    return {
+        "status": "success",
+        "data": {
+            "title": "Playing Video",
+            "qualities": qualities
+        }
+    }
+
+@app.get("/api/schedule")
+def get_schedule():
+    res = fetch_url(f"{BASE_URL}/quick/ongoing")
+    if not res: return {"status": "error"}
+    soup = BeautifulSoup(res.text, 'html.parser')
+    
+    data = [{"day": "Update Hari Ini", "animes": []}]
+    for item in soup.select('.product__item')[:15]:
+        anime = parse_anime_item(item)
+        if anime:
+            data[0]["animes"].append(anime)
+            
+    return {"status": "success", "data": data}
