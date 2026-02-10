@@ -1,0 +1,155 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // 1. ATURAN PENGGUNA (USERS)
+    match /users/{userId} {
+      allow read: if request.auth != null;
+      allow update, delete: if request.auth.uid == userId || request.auth.token.email == 'EMAIL_ADMIN_KAMU@gmail.com';
+      allow create: if request.auth != null;
+      
+      // Sub-collection: Bookmarks (Anime)
+      match /bookmarks/{bookmarkId} {
+        allow read, write: if request.auth.uid == userId;
+      }
+      
+      // Sub-collection: History (Anime)
+      match /history/{historyId} {
+        allow read, write: if request.auth.uid == userId;
+      }
+
+      // Sub-collection: Manga Bookmarks
+      match /manga_bookmarks/{bookmarkId} {
+        allow read, write: if request.auth.uid == userId;
+      }
+      
+      // Sub-collection: Manga History
+      match /manga_history/{historyId} {
+        allow read, write: if request.auth.uid == userId;
+      }
+      
+      // Sub-collection: Hentai History
+      match /hentai_history/{historyId} {
+        allow read, write: if request.auth.uid == userId;
+      }
+    }
+
+    // 2. ATURAN KOMENTAR
+    match /comments/{commentId} {
+      allow read: if true;
+      allow create: if request.auth != null;
+      // User boleh hapus komen sendiri, Admin boleh hapus komen siapa aja
+      allow update, delete: if request.auth != null && (
+        resource.data.userId == request.auth.uid || 
+        resource.data.authorId == request.auth.uid || 
+        request.auth.token.email == 'EMAIL_ADMIN_KAMU@gmail.com'
+      );
+    }
+
+    // 3. ATURAN LIKE SYSTEM (BARU!)
+    match /likes/{likeId} {
+      allow read: if true; // Semua orang boleh liat jumlah like
+      allow create, update: if request.auth != null; // User login boleh bikin like baru
+      
+      // Sub-collection Votes (Fix untuk fitur Like/Dislike)
+      match /votes/{voteId} {
+        allow read, write: if request.auth != null && request.auth.uid == voteId;
+      }
+    }
+
+    // 3.1 ATURAN HENTAI COMMENTS & LIKES
+    match /hentai_comments/{commentId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update, delete: if request.auth != null && (
+        resource.data.userId == request.auth.uid || 
+        request.auth.token.email == 'EMAIL_ADMIN_KAMU@gmail.com'
+      );
+    }
+
+    match /hentai_likes/{likeId} {
+      allow read: if request.auth != null;
+      allow create, update: if request.auth != null;
+      
+      match /votes/{voteId} {
+        allow read, write: if request.auth != null && request.auth.uid == voteId;
+      }
+    }
+
+    // 4. ATURAN TOKEN PREMIUM
+    match /tokens/{tokenId} {
+      allow read, write: if request.auth.token.email == 'EMAIL_ADMIN_KAMU@gmail.com';
+      allow read: if request.auth != null;
+      allow update: if request.auth != null 
+                    && resource.data.is_used == false
+                    && request.resource.data.is_used == true
+                    && request.resource.data.used_by == request.auth.uid;
+    }
+
+    // 5. ATURAN DM / PRIVATE CHAT
+    match /chats/{chatId}/messages/{messageId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && request.resource.data.senderId == request.auth.uid;
+      allow update: if request.auth != null && resource.data.receiverId == request.auth.uid;
+    }
+
+    // 6. ATURAN COLLECTION GROUP
+    match /{path=**}/messages/{messageId} {
+      allow read: if request.auth != null;
+    }
+
+    // 7. ATURAN CHAT GLOBAL
+    match /global_chat/{messageId} {
+      allow read, create: if request.auth != null;
+      allow update, delete: if request.auth.token.email == 'EMAIL_ADMIN_KAMU@gmail.com';
+    }
+
+    // 8. ATURAN REPORT & BUG
+    match /reports/{reportId} {
+      allow create: if request.auth != null;
+      allow read, update, delete: if request.auth.token.email == 'EMAIL_ADMIN_KAMU@gmail.com';
+    }
+    match /bug_reports/{bugReportId} {
+      allow create: if request.auth != null;
+      allow read, update, delete: if request.auth.token.email == 'EMAIL_ADMIN_KAMU@gmail.com';
+    }
+
+    // 9. ATURAN REQUEST & TOPUP
+    match /anime_requests/{requestId} {
+      allow create: if request.auth != null;
+      allow read: if request.auth.uid == resource.data.requestedBy || request.auth.token.email == 'EMAIL_ADMIN_KAMU@gmail.com';
+      allow update, delete: if request.auth.token.email == 'EMAIL_ADMIN_KAMU@gmail.com';
+    }
+    match /topup_requests/{requestId} {
+      allow read, update: if request.auth.token.email == 'EMAIL_ADMIN_KAMU@gmail.com';
+      allow create: if request.auth.uid == request.resource.data.uid;
+    }
+
+    // 10. ATURAN UMUM LAINNYA
+    match /sokuja_anime/{anime} { allow read: if true; }
+    match /chat_messages/{messageId} { allow read, create: if request.auth != null; }
+    match /donators/{donatorId} { allow read: if true; allow write: if request.auth.token.email == 'EMAIL_ADMIN_KAMU@gmail.com'; }
+
+    // 11. ATURAN KONTEN DEWASA (PROPOSED)
+    match /adult_content/{contentId} {
+       allow read: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.is_adult_verified == true;
+       allow write: if request.auth.token.email == 'EMAIL_ADMIN_KAMU@gmail.com';
+    }
+
+    // 12. ATURAN ROOM CHAT (KOMUNITAS)
+    match /rooms/{roomId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth.token.email == 'EMAIL_ADMIN_KAMU@gmail.com';
+      
+      match /messages/{messageId} {
+        allow read, create: if request.auth != null;
+        allow delete: if request.auth.uid == resource.data.uid || request.auth.token.email == 'EMAIL_ADMIN_KAMU@gmail.com';
+      }
+    }
+
+    // DEFAULT DENY
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

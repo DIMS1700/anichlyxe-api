@@ -1,0 +1,154 @@
+# Query: MASUKAN-API
+# ContextLines: 1
+
+39 results - 23 files
+
+README.md:
+  33  2. Tekan `Ctrl + Shift + F` (Search All).
+  34: 3. Cari: `MASUKAN-API`
+  35  4. Replace semua link placeholder itu dengan domain backend/API milik lu.
+
+src\components\home\GenreList.jsx:
+  25        try {
+  26:         const response = await fetch('https://animein.vercel.app/api/genres');
+  27          if (!response.ok) throw new Error('Failed to fetch genres');
+
+src\hooks\useAnimeDetail.js:
+  16          const [detailRes, episodesRes] = await Promise.all([
+  17:           fetch(`https://animein.vercel.app/api/anime/${id}`),
+  18:           fetch(`https://animein.vercel.app/api/anime/${id}/episodes`)
+  19          ]);
+
+src\hooks\useHomeData.js:
+  30        try {
+  31:         const response = await fetch('https://animein.vercel.app/api/home');
+  32          if (!response.ok) {
+
+src\hooks\useStreamData.js:
+  17        try {
+  18:         const response = await fetch(`https://animein.vercel.app/api/stream/${id}`);
+  19          if (!response.ok) {
+
+src\pages\BatchDetail.jsx:
+  18          const url = source === 'kusonime' 
+  19:            ? `https://animein.vercel.app/anime/kusonime/detail/${id}`
+  20:            : `https://animein.vercel.app/anime/samehadaku/batch/${id}`;
+  21  
+
+src\pages\Download.jsx:
+  38          if (source === 'samehadaku') {
+  39:             url = `https://animein.vercel.app/anime/samehadaku/batch?page=${page}`;
+  40          } else {
+
+  42              if (searchQuery) {
+  43:                 url = `https://animein.vercel.app/anime/kusonime/search/${searchQuery}?page=${page}`;
+  44              } else {
+  45:                 url = `https://animein.vercel.app/anime/kusonime/latest?page=${page}`;
+  46              }
+
+src\pages\DownloadDetail.jsx:
+  16          const endpoint = type === 'batch' 
+  17:           ? `https://animein.vercel.app/anime/samehadaku/batch/${id}`
+  18:           : `https://animein.vercel.app/anime/samehadaku/episode/${id}`;
+  19            
+
+  89        try {
+  90:         const res = await fetch(`https://animein.vercel.app/anime/samehadaku/anime/${id}`);
+  91          const json = await res.json();
+
+src\pages\Dracin.jsx:
+  50        try {
+  51:         const response = await fetch('https://animein.vercel.app/anime/drachin/home');
+  52          const result = await response.json();
+
+src\pages\DracinDetail.jsx:
+  18        try {
+  19:         const response = await fetch(`https://animein.vercel.app/anime/drachin/detail/${slug}`);
+  20          const result = await response.json();
+
+src\pages\DracinSearch.jsx:
+  27          try {
+  28:           const response = await fetch(`https://animein.vercel.app/anime/drachin/search/${encodeURIComponent(query)}`);
+  29            const json = await response.json();
+
+src\pages\DracinWatch.jsx:
+  26          // Fetch API
+  27:         const response = await fetch(`https://animein.vercel.app/anime/drachin/episode/${slug}?index=${index}`);
+  28          const result = await response.json();
+
+src\pages\GenreDetail.jsx:
+  27            setLoading(true);
+  28:           const response = await fetch(`https://animein.vercel.app/api/genres/${id}?page=${pageNum}`);
+  29            const data = await response.json();        
+
+src\pages\Hentai.jsx:
+   44        const [homeRes, genreRes] = await Promise.all([
+   45:           fetch('https://animein.vercel.app/api/home'),
+   46:           fetch('https://animein.vercel.app/api/genres')
+   47        ]);
+
+   83      try {
+   84:         const response = await fetch(`https://animein.vercel.app/api/search?q=${searchQuery}&type=${searchType}`);
+   85          const data = await response.json();
+
+  107        try {
+  108:           const response = await fetch(`https://animein.vercel.app/api/genres/${slug}`);
+  109            const data = await response.json();
+
+  125        setLoading(true);
+  126:       fetch('https://animein.vercel.app/api/home')
+  127          .then(res => res.json())
+
+src\pages\HentaiDetail.jsx:
+  14        try {
+  15:         const response = await fetch(`https://animein.vercel.app/api/detail/${slug}`);
+  16          const result = await response.json();
+
+src\pages\HentaiWatch.jsx:
+  47        try {
+  48:         const response = await fetch(`https://animein.vercel.app/api/detail/${slug}`);
+  49          const result = await response.json();
+
+src\pages\Manga.jsx:
+  36          const [sliderRes, latestRes, projectRes, genreRes] = await Promise.all([
+  37:             fetch('https://animein.vercel.app/api/home/slider'),
+  38:             fetch('https://animein.vercel.app/api/home/latest'),
+  39:             fetch('https://animein.vercel.app/api/home/project'),
+  40:             fetch('https://animein.vercel.app/api/genres')
+  41          ]);
+
+src\pages\MangaDetail.jsx:
+  21        try {
+  22:         const response = await fetch(`https://animein.vercel.app/api/manga/${slug}`);
+  23          const result = await response.json();
+
+src\pages\MangaGenre.jsx:
+  27      try {
+  28:       const response = await fetch(`https://animein.vercel.app/api/genres/${slug}?page=${pageNum}`);
+  29        if (response.ok) {
+
+src\pages\MangaRead.jsx:
+  97        try {
+  98:         const response = await fetch(`https://animein.vercel.app/api/read/${mangaSlug}/${slug}`);
+  99          const result = await response.json();
+
+src\pages\Schedule.jsx:
+  37        try {
+  38:         const response = await fetch('https://animein.vercel.app/api/schedule');
+  39          const data = await response.json();
+
+src\pages\Search.jsx:
+  37        if (activeTab === 'anime') {
+  38:         const response = await fetch(`https://animein.vercel.app/api/search?q=${encodeURIComponent(keyword)}`);
+  39          if (response.ok) {
+
+  46          // Manga Search API (Updated)
+  47:         // API: https://MASUKAN-API-MANGA-ANDA.com/api/search/KEYWORD
+  48:         const response = await fetch(`https://animein.vercel.app/api/search/${encodeURIComponent(keyword)}`);
+  49          if (response.ok) {
+
+src\pages\Watch.jsx:
+  459              const [episodesRes, detailRes] = await Promise.all([
+  460:                 fetch(`https://animein.vercel.app/api/anime/${movieId}/episodes`),
+  461:                 fetch(`https://animein.vercel.app/api/anime/${movieId}`)
+  462              ]);

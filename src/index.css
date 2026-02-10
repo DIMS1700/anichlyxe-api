@@ -1,0 +1,34 @@
+@import "tailwindcss";
+
+@theme {
+  --color-dark-bg: #0f0f0f;
+  --color-dark-card: #1c1c1e; /* Slightly lighter than bg for cards */
+  --color-brand-blue: #3b82f6;
+  --color-brand-gold: #f59e0b;
+  --color-text-secondary: #9ca3af; /* Gray-400 */
+}
+
+/* Custom Utilities if needed, though v4 handles most */
+@layer utilities {
+  .glass {
+    @apply backdrop-blur-md bg-white/5 border border-white/10;
+  }
+}
+
+body {
+  @apply bg-dark-bg text-white font-sans antialiased selection:bg-brand-gold selection:text-black;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Hide scrollbar for horizontal scrolling areas but keep functionality */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
