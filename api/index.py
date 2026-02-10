@@ -41,7 +41,7 @@ def get_base_url(request: Request):
 
 def make_proxy_url(target_url: str, request: Request):
     if not target_url or "placeholder" in target_url:
-        return "https://via.placeholder.com/300x450?text=No+Image"
+        return "https://via.placeholder.com/300x400?text=No+Image"
     
     base_url = get_base_url(request)
     if target_url.startswith("/"):
@@ -60,16 +60,12 @@ def fetch_smart(path: str):
     url = path if path.startswith("http") else f"{BASE_DOMAIN}{path if path.startswith('/') else '/' + path}"
 
     try:
-        print(f"🔄 Sedang mengambil: {url}")
-        resp = scraper.get(url, headers=headers, timeout=20) # Naikkan timeout jadi 20s
+        print(f"🔄 Fetching: {url}")
+        resp = scraper.get(url, headers=headers, timeout=20)
         if resp.status_code == 200:
             return BeautifulSoup(resp.text, "html.parser")
-        elif resp.status_code == 404:
-            return None # Skip kalau 404
-        else:
-            print(f"⚠️ Status Code: {resp.status_code}")
     except Exception as e:
-        print(f"❌ Gagal Fetching: {e}")
+        print(f"❌ Error Fetching: {e}")
     return None
 
 def clean_title(text):
@@ -78,7 +74,7 @@ def clean_title(text):
     return text.strip()
 
 # ==========================================
-# 🧩 LOGIKA EKSTRAKSI
+# 🧩 LOGIKA EKSTRAKSI (UNIVERSAL)
 # ==========================================
 def extract_comics_from_soup(soup, request, limit=60):
     data = []
@@ -125,11 +121,8 @@ def extract_comics_from_soup(soup, request, limit=60):
                 "latest": latest,
                 "type": type_str
             })
-            
             if len(data) >= limit: break
-            
-        except Exception: continue
-            
+        except: continue
     return data
 
 # ==========================================
@@ -138,32 +131,51 @@ def extract_comics_from_soup(soup, request, limit=60):
 
 @app.get("/")
 async def root():
-    return {"status": "API Komiku V6 (Read Fixed)", "maintainer": "Gemini AI"}
+    return {"status": "API Komiku V7 (Search Added)", "maintainer": "Gemini AI"}
 
 @app.get("/api/home")
-async def get_home(request: Request):
+async def get_home(request: Request, page: int = 1):
+    """
+    Support Pagination: /api/home?page=2
+    """
     data = []
     
-    # 1. Home
-    soup = fetch_smart("/")
-    if soup: data = extract_comics_from_soup(soup, request)
-    
-    # 2. Backup /daftar-komik/
-    if len(data) < 5:
-        print("⚠️ Backup /daftar-komik/...")
-        soup_list = fetch_smart("/daftar-komik/")
-        if soup_list: data.extend(extract_comics_from_soup(soup_list, request))
-            
-    # 3. Backup /pustaka/
-    if len(data) < 5:
-        print("⚠️ Backup /pustaka/...")
-        soup_lib = fetch_smart("/pustaka/")
-        if soup_lib: data.extend(extract_comics_from_soup(soup_lib, request))
-            
+    # Logic Pagination
+    if page == 1:
+        # Halaman 1: Ambil dari Home Utama + Backup
+        soup = fetch_smart("/")
+        if soup: data = extract_comics_from_soup(soup, request)
+        
+        if len(data) < 5:
+            soup_list = fetch_smart("/daftar-komik/")
+            if soup_list: data.extend(extract_comics_from_soup(soup_list, request))
+    else:
+        # Halaman 2+: Langsung tembak endpoint halaman komik
+        # Format Komiku: /daftar-komik/page/2/
+        target = f"/daftar-komik/page/{page}/"
+        soup = fetch_smart(target)
+        if soup: data = extract_comics_from_soup(soup, request)
+
     if not data:
-        return [{"title": "Maintenance", "slug": "error", "image": "", "latest": "-", "type": "-"}]
+        return [{"title": "End of List", "slug": "#", "image": "", "latest": "-", "type": "-"}]
         
     return data[:60]
+
+@app.get("/api/search")
+async def search(query: str, request: Request):
+    """
+    Fitur Search: /api/search?query=naruto
+    """
+    if not query: return []
+    
+    # Format URL Search Komiku: /?post_type=manga&s=keyword
+    target = f"/?post_type=manga&s={query.replace(' ', '+')}"
+    soup = fetch_smart(target)
+    
+    if not soup: return []
+    
+    # Gunakan logika ekstraksi yang sama
+    return extract_comics_from_soup(soup, request)
 
 @app.get("/api/detail/{slug}")
 async def detail(slug: str, request: Request):
@@ -222,45 +234,27 @@ async def detail(slug: str, request: Request):
 
 @app.get("/api/read/{slug}")
 async def read(slug: str, request: Request):
-    # STRATEGI MULTI-URL UNTUK BACA
-    # Kadang URL chapter beda-beda formatnya
-    
-    # 1. Coba Format Standar /slug/
-    print(f"📖 Mencoba baca: {slug}")
+    print(f"📖 Reading: {slug}")
     soup = fetch_smart(f"/{slug}/")
-    
-    # 2. Kalau gagal, coba format /ch/slug/
-    if not soup: 
-        print("⚠️ Format 1 gagal, mencoba /ch/...")
-        soup = fetch_smart(f"/ch/{slug}/")
-        
-    # 3. Kalau gagal, coba format /manga/slug/ (Jarang tapi mungkin)
-    if not soup:
-        print("⚠️ Format 2 gagal, mencoba /manga/...")
-        soup = fetch_smart(f"/manga/{slug}/")
+    if not soup: soup = fetch_smart(f"/ch/{slug}/")
+    if not soup: soup = fetch_smart(f"/manga/{slug}/")
 
-    if not soup:
-        return {"error": "Chapter tidak ditemukan", "images": []}
+    if not soup: return {"error": "Chapter not found", "images": []}
 
     images = []
     container = soup.select_one('#Baca_Komik') or soup.select_one('.baca-komik') or soup.select_one('#chimg-auh') or soup.select_one('.main-reading-area')
     
-    # Jika container spesifik tidak ketemu, cari di body tapi filter ketat
     img_candidates = container.find_all('img') if container else soup.find_all('img')
 
     for img in img_candidates:
         src = img.get('src') or img.get('data-src') or img.get('data-aload')
         if src and src.startswith('http'):
-            # Filter iklan sampah
             src_lower = src.lower()
             if any(x in src_lower for x in ['facebook', 'twitter', 'iklan', 'ads', 'google', 'disqus', 'logo', 'icon']):
                 continue
-            
-            # Pastikan format gambar
             if any(ext in src_lower for ext in ['.jpg', '.jpeg', '.png', '.webp', '.avif']):
                 images.append(make_proxy_url(src, request))
     
-    print(f"✅ Gambar ditemukan: {len(images)}")
     return {"images": images}
 
 @app.get("/api/image")
