@@ -147,7 +147,7 @@ const Register = () => {
                               value={formData.username}
                               onChange={handleChange}
                               placeholder="Wibu Sejati" 
-                              className="w-full bg-[#27272a] border border-transparent focus:border-violet-500 rounded-xl py-3 pl-12 pr-4 text-sm text-white focus:outline-none transition-all"
+                              className="w-full bg-[#27272a] border border-transparent focus:border-orange-500 rounded-xl py-3 pl-12 pr-4 text-sm text-white focus:outline-none transition-all"
                           />
                       </div>
                   </div>
@@ -163,7 +163,7 @@ const Register = () => {
                               value={formData.email}
                               onChange={handleChange}
                               placeholder="email@contoh.com" 
-                              className="w-full bg-[#27272a] border border-transparent focus:border-violet-500 rounded-xl py-3 pl-12 pr-4 text-sm text-white focus:outline-none transition-all"
+                              className="w-full bg-[#27272a] border border-transparent focus:border-orange-500 rounded-xl py-3 pl-12 pr-4 text-sm text-white focus:outline-none transition-all"
                           />
                       </div>
                   </div>
@@ -179,7 +179,7 @@ const Register = () => {
                               value={formData.password}
                               onChange={handleChange}
                               placeholder="••••••••" 
-                              className="w-full bg-[#27272a] border border-transparent focus:border-violet-500 rounded-xl py-3 pl-12 pr-4 text-sm text-white focus:outline-none transition-all"
+                              className="w-full bg-[#27272a] border border-transparent focus:border-orange-500 rounded-xl py-3 pl-12 pr-4 text-sm text-white focus:outline-none transition-all"
                           />
                       </div>
                   </div>
@@ -187,7 +187,7 @@ const Register = () => {
                   <button 
                       type="submit" 
                       disabled={loading}
-                      className="w-full bg-violet-600 hover:bg-violet-700 text-white font-bold py-3.5 rounded-xl transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 mt-4"
+                      className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-3.5 rounded-xl transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 mt-4"
                   >
                       {loading ? <Loader2 className="animate-spin" size={20} /> : 'Kirim Kode Verifikasi'}
                   </button>
@@ -196,8 +196,8 @@ const Register = () => {
               /* FORM OTP */
               <form onSubmit={handleVerifyAndRegister} className="space-y-6 animate-in fade-in slide-in-from-right-10">
                   <div className="text-center">
-                      <div className="w-16 h-16 bg-violet-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                          <Mail className="text-violet-500" size={32} />
+                      <div className="w-16 h-16 bg-orange-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                          <Mail className="text-orange-500" size={32} />
                       </div>
                       <h3 className="text-lg font-bold">Cek Email Anda</h3>
                       <p className="text-sm text-gray-400 mt-1">
@@ -213,14 +213,14 @@ const Register = () => {
                           value={otpInput}
                           onChange={(e) => setOtpInput(e.target.value.replace(/[^0-9]/g, ''))}
                           placeholder="000000" 
-                          className="w-full bg-[#27272a] border border-violet-500/50 text-center text-3xl font-mono tracking-[0.5em] rounded-xl py-4 text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
+                          className="w-full bg-[#27272a] border border-orange-500/50 text-center text-3xl font-mono tracking-[0.5em] rounded-xl py-4 text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
                       />
                   </div>
 
                   <button 
                       type="submit" 
                       disabled={loading}
-                      className="w-full bg-violet-600 hover:bg-violet-700 text-white font-bold py-3.5 rounded-xl transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
+                      className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-3.5 rounded-xl transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
                   >
                       {loading ? <Loader2 className="animate-spin" size={20} /> : 'Verifikasi & Daftar'}
                   </button>
@@ -237,7 +237,7 @@ const Register = () => {
 
           {step === 1 && (
               <div className="mt-8 text-center text-sm text-gray-500">
-                  Sudah punya akun? <Link to="/login" className="text-violet-500 font-bold hover:underline">Masuk</Link>
+                  Sudah punya akun? <Link to="/login" className="text-orange-500 font-bold hover:underline">Masuk</Link>
               </div>
           )}
         </div>

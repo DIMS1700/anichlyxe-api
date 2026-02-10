@@ -5,8 +5,8 @@ import Layout from '../components/layout/Layout';
 
 const FeatureItem = ({ text }) => (
   <div className="flex items-center gap-3 p-3 bg-white/5 rounded-xl border border-white/5">
-    <div className="bg-violet-500/20 p-1.5 rounded-full">
-      <Check size={14} className="text-violet-500" strokeWidth={3} />
+    <div className="bg-orange-500/20 p-1.5 rounded-full">
+      <Check size={14} className="text-orange-500" strokeWidth={3} />
     </div>
     <span className="text-sm text-gray-200">{text}</span>
   </div>
@@ -18,19 +18,19 @@ const PlanCard = ({ title, price, originalPrice, period, isPopular, badgeText, f
     className={cn(
       "relative p-5 rounded-2xl border-2 transition-all duration-300 cursor-pointer overflow-hidden group",
       isSelected 
-        ? "bg-[#1A1A1A] border-violet-500 shadow-xl shadow-violet-500/10" 
+        ? "bg-[#1A1A1A] border-orange-500 shadow-xl shadow-orange-500/10" 
         : "bg-[#111111] border-white/10 hover:border-white/20"
     )}
   >
     {isPopular && (
-      <div className="absolute top-0 right-0 bg-violet-500 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl uppercase tracking-wider">
+      <div className="absolute top-0 right-0 bg-orange-500 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl uppercase tracking-wider">
         {badgeText || 'Paling Laris'}
       </div>
     )}
     
     <div className="flex justify-between items-start mb-4">
       <div>
-        <h3 className={cn("text-lg font-bold mb-1", isSelected ? "text-violet-500" : "text-white")}>
+        <h3 className={cn("text-lg font-bold mb-1", isSelected ? "text-orange-500" : "text-white")}>
           {title}
         </h3>
         <div className="flex flex-col">
@@ -45,7 +45,7 @@ const PlanCard = ({ title, price, originalPrice, period, isPopular, badgeText, f
       </div>
       <div className={cn(
         "w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors",
-        isSelected ? "border-violet-500 bg-violet-500" : "border-gray-600"
+        isSelected ? "border-orange-500 bg-orange-500" : "border-gray-600"
       )}>
         {isSelected && <Check size={14} className="text-white" strokeWidth={3} />}
       </div>
@@ -93,16 +93,16 @@ const Premium = () => {
     <Layout>
       <div className="min-h-screen pb-24">
         {/* Header Banner */}
-        <div className="relative h-64 overflow-hidden rounded-b-[2.5rem] bg-gradient-to-b from-violet-600 to-violet-900 -mx-4 md:-mx-6 lg:-mx-8">
+        <div className="relative h-64 overflow-hidden rounded-b-[2.5rem] bg-gradient-to-b from-orange-600 to-orange-900 -mx-4 md:-mx-6 lg:-mx-8">
           <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1578632767115-351597cf2477?q=80&w=2000&auto=format&fit=crop')] opacity-10 mix-blend-overlay bg-cover bg-center" />
           <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] to-transparent" />
           
           <div className="relative h-full flex flex-col items-center justify-center text-center px-6 pt-8">
-            <div className="w-16 h-16 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center mb-4 border border-white/20 shadow-2xl shadow-violet-500/30">
+            <div className="w-16 h-16 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center mb-4 border border-white/20 shadow-2xl shadow-orange-500/30">
               <Crown size={32} className="text-yellow-400 fill-yellow-400" />
             </div>
             <h1 className="text-3xl font-bold text-white mb-2">LyxeNime Premium</h1>
-            <p className="text-violet-100/80 text-sm max-w-xs">
+            <p className="text-orange-100/80 text-sm max-w-xs">
               Nikmati pengalaman nonton anime terbaik tanpa batas dan gangguan iklan.
             </p>
           </div>

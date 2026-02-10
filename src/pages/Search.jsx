@@ -92,7 +92,7 @@ const SearchPage = () => {
                         onChange={(e) => setQuery(e.target.value)}
                         placeholder="Cari anime..."
                         autoFocus
-                        className="w-full bg-[#27272a] border-none rounded-xl py-2.5 pl-10 pr-10 text-white placeholder:text-gray-500 focus:ring-1 focus:ring-violet-500 transition-all shadow-inner"
+                        className="w-full bg-[#27272a] border-none rounded-xl py-2.5 pl-10 pr-10 text-white placeholder:text-gray-500 focus:ring-1 focus:ring-orange-500 transition-all shadow-inner"
                      />
                      <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                      {query && (
@@ -121,7 +121,7 @@ const SearchPage = () => {
                      <Link 
                         to={`/detail/${item.id || item.slug}`} // Fallback ID/Slug
                         key={item.id || index} 
-                        className="group relative block rounded-xl overflow-hidden bg-[#18181b] border border-white/5 hover:border-violet-500/50 transition-all duration-300 hover:shadow-lg hover:shadow-violet-500/10"
+                        className="group relative block rounded-xl overflow-hidden bg-[#18181b] border border-white/5 hover:border-orange-500/50 transition-all duration-300 hover:shadow-lg hover:shadow-orange-500/10"
                      >
                          <div className="aspect-[3/4.5] overflow-hidden relative">
                              <img 
@@ -135,7 +135,7 @@ const SearchPage = () => {
                              
                              {/* Type Label */}
                              {item.type && (
-                               <div className="absolute top-2 right-2 bg-violet-600/90 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-sm backdrop-blur-sm">
+                               <div className="absolute top-2 right-2 bg-orange-600/90 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-sm backdrop-blur-sm">
                                    {item.type}
                                </div>
                              )}
@@ -150,7 +150,7 @@ const SearchPage = () => {
                          
                          {/* Text Content */}
                          <div className="absolute bottom-0 left-0 right-0 p-3">
-                             <h3 className="text-xs font-bold text-white line-clamp-2 leading-tight group-hover:text-violet-400 transition-colors">
+                             <h3 className="text-xs font-bold text-white line-clamp-2 leading-tight group-hover:text-orange-400 transition-colors">
                                  {item.title}
                              </h3>
                              {item.rating && (

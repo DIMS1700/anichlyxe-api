@@ -76,7 +76,7 @@ const GenreDetail = () => {
     <Layout withBottomNav={true}>
       <div className="min-h-screen bg-[#121212] pb-24 text-white font-sans">
         
-        {/* HEADER (Warna Violet) */}
+        {/* HEADER (Warna orange) */}
         <div className="sticky top-0 z-50 bg-[#121212]/95 backdrop-blur-md border-b border-white/5 px-4 py-3 shadow-lg">
           <div className="flex items-center gap-3 max-w-7xl mx-auto">
             <button 
@@ -86,7 +86,7 @@ const GenreDetail = () => {
               <ArrowLeft size={22} className="text-white" />
             </button>
             <h1 className="text-lg font-bold text-white capitalize truncate">
-              Genre: <span className="text-violet-500">{genreTitle}</span>
+              Genre: <span className="text-orange-500">{genreTitle}</span>
             </h1>
           </div>
         </div>
@@ -114,7 +114,7 @@ const GenreDetail = () => {
             </div>
           )}
 
-          {/* LIST ANIME (Grid Lebih Rapat & Warna Violet) */}
+          {/* LIST ANIME (Grid Lebih Rapat & Warna orange) */}
           {!loading && animeList.length > 0 && (
             // UPDATE GRID: Menambahkan lg:grid-cols-6 dan memperkecil gap di mobile (gap-2)
             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2 sm:gap-4">
@@ -137,7 +137,7 @@ const GenreDetail = () => {
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent opacity-60 group-hover:opacity-80 transition-opacity"></div>
 
-                        {/* BADGES (Favorites & Type) - Warna Violet */}
+                        {/* BADGES (Favorites & Type) - Warna orange */}
                         <div className="absolute top-2 left-2 flex flex-col gap-1 items-start">
                             {anime.favorites && (
                                 <span className="flex items-center gap-1 bg-yellow-500/90 text-black text-[8px] font-bold px-1.5 py-0.5 rounded shadow-sm backdrop-blur-sm">
@@ -145,25 +145,25 @@ const GenreDetail = () => {
                                 </span>
                             )}
                             {anime.type && (
-                                // Ubah bg-orange jadi bg-violet
-                                <span className="bg-violet-600/90 text-white text-[8px] font-bold px-1.5 py-0.5 rounded shadow-sm backdrop-blur-sm">
+                                // Ubah bg-orange jadi bg-orange
+                                <span className="bg-orange-600/90 text-white text-[8px] font-bold px-1.5 py-0.5 rounded shadow-sm backdrop-blur-sm">
                                     {anime.type}
                                 </span>
                             )}
                         </div>
 
-                        {/* HOVER PLAY BUTTON - Warna Violet */}
+                        {/* HOVER PLAY BUTTON - Warna orange */}
                         <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                          {/* Ubah bg-orange jadi bg-violet */}
-                          <div className="w-10 h-10 bg-violet-600 rounded-full flex items-center justify-center shadow-lg transform scale-50 group-hover:scale-100 transition-transform">
+                          {/* Ubah bg-orange jadi bg-orange */}
+                          <div className="w-10 h-10 bg-orange-600 rounded-full flex items-center justify-center shadow-lg transform scale-50 group-hover:scale-100 transition-transform">
                             <Play size={20} fill="currentColor" className="text-white ml-1" />
                           </div>
                         </div>
                       </div>
 
-                      {/* JUDUL - Hover Warna Violet */}
-                      {/* Ubah hover:text-orange jadi hover:text-violet */}
-                      <h3 className="text-xs sm:text-sm font-bold text-gray-200 line-clamp-2 leading-snug group-hover:text-violet-500 transition-colors">
+                      {/* JUDUL - Hover Warna orange */}
+                      {/* Ubah hover:text-orange jadi hover:text-orange */}
+                      <h3 className="text-xs sm:text-sm font-bold text-gray-200 line-clamp-2 leading-snug group-hover:text-orange-500 transition-colors">
                         {anime.title}
                       </h3>
                     </Link>

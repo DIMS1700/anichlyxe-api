@@ -45,7 +45,7 @@ const HeroSection = ({ movie }) => {
         <div className="flex-1 min-w-0 pb-2">
             {/* Chips */}
             <div className="flex flex-wrap items-center gap-2 mb-2">
-                <span className="px-2 py-0.5 bg-violet-600 text-white text-[10px] font-black tracking-widest uppercase rounded">
+                <span className="px-2 py-0.5 bg-orange-600 text-white text-[10px] font-black tracking-widest uppercase rounded">
                     {movie.type || 'ANIME'}
                 </span>
                 {movie.score && (

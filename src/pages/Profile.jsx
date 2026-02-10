@@ -279,7 +279,7 @@ const Profile = () => {
     <Layout>
     <div className="text-white font-sans">
        {/* Header Pattern */}
-       <div className="h-40 bg-gradient-to-br from-violet-900/40 to-black relative overflow-hidden -mx-4 md:-mx-6 lg:-mx-8 -mt-4 rounded-b-[2.5rem] shadow-2xl">
+       <div className="h-40 bg-gradient-to-br from-orange-900/40 to-black relative overflow-hidden -mx-4 md:-mx-6 lg:-mx-8 -mt-4 rounded-b-[2.5rem] shadow-2xl">
            <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20"></div>
            {!isEditing && (
              <button 
@@ -316,7 +316,7 @@ const Profile = () => {
                    {!isEditing && (
                        <button 
                          onClick={() => setIsEditing(true)}
-                         className="absolute -bottom-1 -right-1 p-2.5 bg-violet-600 border-4 border-[#111111] rounded-full text-white hover:bg-violet-500 transition-colors shadow-lg z-20 group"
+                         className="absolute -bottom-1 -right-1 p-2.5 bg-orange-600 border-4 border-[#111111] rounded-full text-white hover:bg-orange-500 transition-colors shadow-lg z-20 group"
                          title="Ganti Foto Profil"
                        >
                            <Camera size={18} fill="currentColor" className="group-hover:scale-110 transition-transform" />
@@ -336,7 +336,7 @@ const Profile = () => {
                    <div className="mt-4 flex flex-col items-center gap-3 w-full max-w-xs animate-in fade-in slide-in-from-bottom-2">
                        {/* Tutorial Hint */}
                        <div className="flex flex-col items-center gap-1 mb-2 text-center">
-                           <p className="text-[10px] text-violet-400 font-bold bg-violet-500/10 px-2 py-1 rounded-lg border border-violet-500/20">
+                           <p className="text-[10px] text-orange-400 font-bold bg-orange-500/10 px-2 py-1 rounded-lg border border-orange-500/20">
                                <Camera size={10} className="inline mr-1" /> Ketuk foto di atas untuk ganti gambar
                            </p>
                            <p className="text-[10px] text-gray-500">
@@ -348,12 +348,12 @@ const Profile = () => {
                           type="text" 
                           value={newName}
                           onChange={(e) => setNewName(e.target.value)}
-                          className="w-full bg-[#27272a] border border-white/10 rounded-xl px-4 py-2 text-center text-white focus:outline-none focus:border-violet-500"
+                          className="w-full bg-[#27272a] border border-white/10 rounded-xl px-4 py-2 text-center text-white focus:outline-none focus:border-orange-500"
                           placeholder="Nama Pengguna"
                        />
                        <div className="flex gap-2 w-full">
                            <button onClick={cancelEdit} disabled={uploading} className="flex-1 py-2 bg-zinc-800 rounded-xl text-sm font-bold text-gray-400 hover:text-white transition-colors">Batal</button>
-                           <button onClick={handleSaveProfile} disabled={uploading} className="flex-1 py-2 bg-violet-600 rounded-xl text-sm font-bold text-white hover:bg-violet-700 transition-colors flex items-center justify-center gap-2">
+                           <button onClick={handleSaveProfile} disabled={uploading} className="flex-1 py-2 bg-orange-600 rounded-xl text-sm font-bold text-white hover:bg-orange-700 transition-colors flex items-center justify-center gap-2">
                               {uploading ? <Loader2 className="animate-spin" size={16} /> : 'Simpan'}
                            </button>
                        </div>
@@ -381,7 +381,7 @@ const Profile = () => {
                            {/* Badge Label */}
                            <div className={`absolute top-0 right-0 px-3 py-1 rounded-bl-xl text-[10px] font-bold uppercase tracking-wider ${
                                user.email === 'EMAIL_ADMIN_KAMU@gmail.com'
-                               ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-lg shadow-indigo-500/20'
+                               ? 'bg-gradient-to-r from-indigo-600 to-orange-600 text-white shadow-lg shadow-indigo-500/20'
                                : isPremium 
                                  ? 'bg-gradient-to-r from-yellow-600 to-yellow-400 text-black' 
                                  : 'bg-zinc-700 text-gray-300'
@@ -390,7 +390,7 @@ const Profile = () => {
                            </div>
 
                            <div className="flex items-center gap-3 mb-3">
-                               <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-500 to-red-600 flex items-center justify-center shadow-lg shadow-violet-500/20">
+                               <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center shadow-lg shadow-orange-500/20">
                                    <Zap size={20} className="text-white fill-white" />
                                </div>
                                <div>
@@ -407,7 +407,7 @@ const Profile = () => {
                                </div>
                                <div className="h-2 w-full bg-zinc-800 rounded-full overflow-hidden">
                                    <div 
-                                      className="h-full bg-gradient-to-r from-violet-500 to-red-500 transition-all duration-500"
+                                      className="h-full bg-gradient-to-r from-orange-500 to-red-500 transition-all duration-500"
                                       style={{ width: `${progressPercent}%` }}
                                    ></div>
                                </div>
@@ -423,7 +423,7 @@ const Profile = () => {
                                if (diffDays > 0) {
                                    return (
                                        <p className="text-[10px] text-gray-400 mt-4 text-center">
-                                           Premium Anda akan kedaluwarsa dalam <span className="font-bold text-violet-400">{diffDays} hari lagi</span>
+                                           Premium Anda akan kedaluwarsa dalam <span className="font-bold text-orange-400">{diffDays} hari lagi</span>
                                        </p>
                                    );
                                } else if (diffDays === 0) {
@@ -484,7 +484,7 @@ const Profile = () => {
                            )}
 
                            <div className="p-4 flex items-center gap-3 border-b border-white/5 hover:bg-white/5 transition-colors cursor-pointer">
-                               <div className="p-2 bg-violet-500/10 rounded-lg text-violet-500"><Crown size={20} /></div>
+                               <div className="p-2 bg-orange-500/10 rounded-lg text-orange-500"><Crown size={20} /></div>
                                <div className="flex-1">
                                    <h3 className="text-sm font-bold">Premium</h3>
                                    <p className="text-xs text-gray-500">Beli token premium</p>
@@ -527,7 +527,7 @@ const Profile = () => {
            <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/90 p-4 animate-in fade-in backdrop-blur-sm">
                <div className="w-full max-w-sm bg-[#18181b] border border-red-500/30 rounded-2xl p-6 shadow-2xl animate-in zoom-in-95 relative overflow-hidden">
                    {/* Background Glow */}
-                   <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-600 to-violet-600"></div>
+                   <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-600 to-orange-600"></div>
                    
                    <div className="flex flex-col items-center text-center mb-6">
                        <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mb-4 border border-red-500/20">

@@ -100,14 +100,14 @@ const AdminUsers = () => {
                 placeholder="Cari email atau username..." 
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full bg-[#18181b] border border-white/10 rounded-xl py-3 pl-10 pr-4 text-sm text-white focus:outline-none focus:border-violet-500 transition-colors"
+                className="w-full bg-[#18181b] border border-white/10 rounded-xl py-3 pl-10 pr-4 text-sm text-white focus:outline-none focus:border-orange-500 transition-colors"
             />
         </div>
 
         {/* User List */}
         {loading ? (
             <div className="flex flex-col items-center justify-center py-20">
-                <div className="w-8 h-8 border-4 border-violet-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+                <div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mb-4"></div>
                 <p className="text-xs text-gray-500">Memuat data user...</p>
             </div>
         ) : (
@@ -141,7 +141,7 @@ const AdminUsers = () => {
                             {/* Stats */}
                             <div className="flex items-center gap-3 text-[10px] text-gray-400">
                                 <span className="flex items-center gap-1">
-                                    <Award size={10} className="text-violet-500" />
+                                    <Award size={10} className="text-orange-500" />
                                     Lvl {Math.floor((user.xp || 0) / 10) + 1}
                                 </span>
                                 <span className="flex items-center gap-1">

@@ -10,7 +10,7 @@ const updates = [
     ep: "12",
     views: "12k",
     isNew: true,
-    color: "from-red-500 to-violet-500"
+    color: "from-red-500 to-orange-500"
   },
   {
     id: 2,
@@ -28,7 +28,7 @@ const updates = [
     ep: "24",
     views: "34k",
     isNew: false,
-    color: "from-violet-500 to-pink-500"
+    color: "from-orange-500 to-pink-500"
   },
   {
     id: 4,

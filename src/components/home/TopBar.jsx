@@ -6,7 +6,7 @@ import { getFirestore, doc, onSnapshot } from "firebase/firestore";
 import { auth } from '../../lib/firebase';
 
 // Menerima props 'theme' untuk otomatis ganti warna
-const TopBar = ({ theme = 'violet' }) => {
+const TopBar = ({ theme = 'orange' }) => {
   const [user, setUser] = useState(null);
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -19,22 +19,22 @@ const TopBar = ({ theme = 'violet' }) => {
   // --- KONFIGURASI WARNA DINAMIS ---
   const colors = {
     // Ikon & Teks
-    iconColor: isManga ? 'text-orange-500' : 'text-violet-500', 
-    xpText: isManga ? 'text-orange-500' : 'text-violet-500',
+    iconColor: isManga ? 'text-orange-500' : 'text-orange-500', 
+    xpText: isManga ? 'text-orange-500' : 'text-orange-500',
     
     // Background Bulat Ikon (Keys/Book)
-    iconBg: isManga ? 'bg-orange-600' : 'bg-violet-500',
+    iconBg: isManga ? 'bg-orange-600' : 'bg-orange-500',
     
     // Hover Nama User
-    userHover: isManga ? 'group-hover:text-orange-500' : 'group-hover:text-violet-500',
+    userHover: isManga ? 'group-hover:text-orange-500' : 'group-hover:text-orange-500',
     
     // Tombol Download/Baca
-    btnBg: isManga ? 'bg-orange-600 hover:bg-orange-500' : 'bg-violet-600 hover:bg-violet-500',
+    btnBg: isManga ? 'bg-orange-600 hover:bg-orange-500' : 'bg-orange-600 hover:bg-orange-500',
     
     // Efek Glow di Notifikasi
-    glow: isManga ? 'bg-orange-500/20' : 'bg-violet-500/20',
-    borderIcon: isManga ? 'border-orange-500/30' : 'border-violet-500/30',
-    iconBoxBg: isManga ? 'bg-orange-500/10' : 'bg-violet-500/10',
+    glow: isManga ? 'bg-orange-500/20' : 'bg-orange-500/20',
+    borderIcon: isManga ? 'border-orange-500/30' : 'border-orange-500/30',
+    iconBoxBg: isManga ? 'bg-orange-500/10' : 'bg-orange-500/10',
   };
 
   useEffect(() => {

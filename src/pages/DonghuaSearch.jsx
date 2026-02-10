@@ -65,7 +65,7 @@ const DonghuaSearch = () => {
                 value={query} 
                 onChange={(e) => setQuery(e.target.value)} 
                 placeholder="Cari DONGHUA di Anichin..." 
-                className="w-full bg-[#1e1e1e] border border-white/10 rounded-full py-3 pl-12 pr-10 text-sm focus:border-violet-500 focus:outline-none text-white"
+                className="w-full bg-[#1e1e1e] border border-white/10 rounded-full py-3 pl-12 pr-10 text-sm focus:border-orange-500 focus:outline-none text-white"
                 autoFocus
               />
               <Search className="absolute left-4 top-3.5 text-gray-400" size={18}/>
@@ -80,12 +80,12 @@ const DonghuaSearch = () => {
 
         {/* Results */}
         <div className="px-4 mt-6">
-          <h2 className="text-xs font-bold text-violet-400 mb-4 px-2 border-l-2 border-violet-500">
+          <h2 className="text-xs font-bold text-orange-400 mb-4 px-2 border-l-2 border-orange-500">
              HASIL DARI SERVER ANICHIN (Donghua Only):
           </h2>
 
           {loading ? (
-             <div className="flex justify-center py-20"><Loader2 className="animate-spin text-violet-500" size={40}/></div>
+             <div className="flex justify-center py-20"><Loader2 className="animate-spin text-orange-500" size={40}/></div>
           ) : results.length > 0 ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
               {results.map((item, index) => (
@@ -99,7 +99,7 @@ const DonghuaSearch = () => {
                       
                       {/* Badge Episode */}
                       {item.episode && (
-                        <div className="absolute top-2 left-2 bg-violet-600 text-[10px] font-bold px-2 py-0.5 rounded text-white shadow-lg">
+                        <div className="absolute top-2 left-2 bg-orange-600 text-[10px] font-bold px-2 py-0.5 rounded text-white shadow-lg">
                           {item.episode}
                         </div>
                       )}
@@ -111,7 +111,7 @@ const DonghuaSearch = () => {
                          </div>
                       )}
                    </div>
-                   <h4 className="text-xs font-bold text-gray-200 line-clamp-2 group-hover:text-violet-400">{item.title}</h4>
+                   <h4 className="text-xs font-bold text-gray-200 line-clamp-2 group-hover:text-orange-400">{item.title}</h4>
                 </Link>
               ))}
             </div>

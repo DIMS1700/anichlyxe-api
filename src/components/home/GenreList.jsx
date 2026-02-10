@@ -72,9 +72,9 @@ const GenreList = () => {
             <Link 
               to={`/genre/${genreSlug}`}
               key={index} 
-              className="group flex items-center justify-center px-4 py-2 rounded-full bg-[#1e1e1e] border border-white/5 hover:border-violet-500/50 hover:bg-violet-500/10 transition-all duration-300"
+              className="group flex items-center justify-center px-4 py-2 rounded-full bg-[#1e1e1e] border border-white/5 hover:border-orange-500/50 hover:bg-orange-500/10 transition-all duration-300"
             >
-              <span className="text-sm font-medium text-gray-300 group-hover:text-violet-400 whitespace-nowrap transition-colors">
+              <span className="text-sm font-medium text-gray-300 group-hover:text-orange-400 whitespace-nowrap transition-colors">
                   {genreName}
               </span>
             </Link>

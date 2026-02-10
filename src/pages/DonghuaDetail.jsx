@@ -33,7 +33,7 @@ const DonghuaDetail = () => {
   if (loading) return (
     <Layout>
       <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
-        <Loader2 className="animate-spin text-violet-500" size={40}/>
+        <Loader2 className="animate-spin text-orange-500" size={40}/>
       </div>
     </Layout>
   );
@@ -61,7 +61,7 @@ const DonghuaDetail = () => {
         {/* Info Area */}
         <div className="px-4 -mt-32 relative z-10 max-w-5xl mx-auto flex flex-col md:flex-row gap-6">
           <div className="w-40 md:w-56 mx-auto md:mx-0 shrink-0">
-             <img src={data.image} className="w-full rounded-xl shadow-2xl shadow-violet-900/20 border border-white/10" alt={data.title} />
+             <img src={data.image} className="w-full rounded-xl shadow-2xl shadow-orange-900/20 border border-white/10" alt={data.title} />
           </div>
 
           <div className="flex-1 text-center md:text-left mt-4">
@@ -81,7 +81,7 @@ const DonghuaDetail = () => {
                   <Link 
                     // PERBAIKAN PENTING: Sesuai App.js => /donghua/watch/:slug
                     to={`/donghua/watch/${data.episodes[0].slug}`} 
-                    className="inline-flex items-center gap-2 bg-violet-600 text-white px-8 py-3 rounded-full font-bold hover:bg-violet-700 transition-all shadow-lg shadow-violet-600/30 hover:scale-105"
+                    className="inline-flex items-center gap-2 bg-orange-600 text-white px-8 py-3 rounded-full font-bold hover:bg-orange-700 transition-all shadow-lg shadow-orange-600/30 hover:scale-105"
                   >
                     <PlayCircle size={20} fill="currentColor" /> Tonton Episode {data.episodes[0].episode}
                   </Link>
@@ -93,7 +93,7 @@ const DonghuaDetail = () => {
              </div>
 
              <div className="bg-white/5 p-5 rounded-2xl border border-white/5 text-left backdrop-blur-sm">
-                <h3 className="text-xs font-bold text-violet-300 mb-2 flex items-center gap-2">
+                <h3 className="text-xs font-bold text-orange-300 mb-2 flex items-center gap-2">
                   <Info size={14}/> SINOPSIS
                 </h3>
                 <p className="text-sm text-gray-300 leading-relaxed text-justify opacity-90">
@@ -104,7 +104,7 @@ const DonghuaDetail = () => {
              {/* Genre */}
              <div className="mt-4 flex flex-wrap gap-2 justify-center md:justify-start">
                {data.genres && data.genres.map((genre, idx) => (
-                 <span key={idx} className="text-[10px] px-3 py-1 bg-violet-500/10 text-violet-300 rounded-full border border-violet-500/20 hover:bg-violet-500/20 transition cursor-default">
+                 <span key={idx} className="text-[10px] px-3 py-1 bg-orange-500/10 text-orange-300 rounded-full border border-orange-500/20 hover:bg-orange-500/20 transition cursor-default">
                    {genre}
                  </span>
                ))}
@@ -114,8 +114,8 @@ const DonghuaDetail = () => {
 
         {/* LIST EPISODE (Fixed Path) */}
         <div className="px-4 mt-12 max-w-5xl mx-auto">
-           <h3 className="text-lg font-bold mb-6 flex items-center gap-2 text-white border-l-4 border-violet-500 pl-3">
-             <Layers size={20} className="text-violet-500"/> Daftar Episode
+           <h3 className="text-lg font-bold mb-6 flex items-center gap-2 text-white border-l-4 border-orange-500 pl-3">
+             <Layers size={20} className="text-orange-500"/> Daftar Episode
            </h3>
            <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-3">
               {data.episodes?.map((ep, i) => (
@@ -123,7 +123,7 @@ const DonghuaDetail = () => {
                    key={i} 
                    // PERBAIKAN PENTING: Sesuai App.js => /donghua/watch/:slug
                    to={`/donghua/watch/${ep.slug}`} 
-                   className="bg-[#151515] hover:bg-violet-600 border border-white/5 hover:border-violet-500 p-3 rounded-xl flex flex-col items-center justify-center transition-all group hover:-translate-y-1 shadow-lg"
+                   className="bg-[#151515] hover:bg-orange-600 border border-white/5 hover:border-orange-500 p-3 rounded-xl flex flex-col items-center justify-center transition-all group hover:-translate-y-1 shadow-lg"
                  >
                     <span className="text-[10px] text-gray-500 group-hover:text-white/80 mb-1">Episode</span>
                     <span className="text-sm font-bold group-hover:text-white">{ep.episode}</span>

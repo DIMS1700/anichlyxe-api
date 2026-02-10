@@ -52,7 +52,7 @@ const EpisodeList = ({ episodes }) => {
                 placeholder="Cari episode..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full bg-[#161618] border-none rounded-lg py-2.5 pl-10 pr-4 text-sm text-white placeholder:text-gray-600 focus:ring-1 focus:ring-violet-500"
+                className="w-full bg-[#161618] border-none rounded-lg py-2.5 pl-10 pr-4 text-sm text-white placeholder:text-gray-600 focus:ring-1 focus:ring-orange-500"
             />
         </div>
       </div>

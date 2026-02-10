@@ -16,10 +16,10 @@ const Donasi = () => {
       <div className="min-h-screen pb-10 pt-4">
         {/* Header */}
         <div className="text-center mb-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
-          <div className="w-20 h-20 bg-violet-500/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-violet-500/20">
-            <Heart size={40} className="text-violet-500 fill-violet-500 animate-pulse" />
+          <div className="w-20 h-20 bg-orange-500/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-orange-500/20">
+            <Heart size={40} className="text-orange-500 fill-orange-500 animate-pulse" />
           </div>
-          <h1 className="text-3xl font-black text-white mb-2">Dukung <span className="text-violet-500">Lyxe</span>Nime</h1>
+          <h1 className="text-3xl font-black text-white mb-2">Dukung <span className="text-orange-500">Lyxe</span>Nime</h1>
           <p className="text-gray-400 text-sm max-w-xs mx-auto leading-relaxed">
             Bantu admin beli kopi & bayar server biar website tetap ngebut dan update setiap hari! 🚀
           </p>

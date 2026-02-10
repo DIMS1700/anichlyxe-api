@@ -86,11 +86,11 @@ const DonghuaWatch = () => {
         </div>
 
         {/* Player Area */}
-        <div className="w-full aspect-video bg-black relative flex items-center justify-center border-b border-white/10 shadow-2xl shadow-violet-900/10">
+        <div className="w-full aspect-video bg-black relative flex items-center justify-center border-b border-white/10 shadow-2xl shadow-orange-900/10">
           
           {loading ? (
             <div className="flex flex-col items-center gap-3">
-              <Loader2 className="animate-spin text-violet-500" size={40} />
+              <Loader2 className="animate-spin text-orange-500" size={40} />
               <p className="text-xs text-gray-500 animate-pulse">Sedang menyiapkan video...</p>
             </div>
           ) : error ? (
@@ -174,7 +174,7 @@ const DonghuaWatch = () => {
             <div className="mb-6">
                <h2 className="text-lg md:text-xl font-bold text-white leading-tight mb-2">{data.title}</h2>
                <div className="flex items-center gap-2 text-xs text-gray-400">
-                  <span className="flex items-center gap-1 bg-violet-500/10 px-2 py-1 rounded text-violet-300 border border-violet-500/20">
+                  <span className="flex items-center gap-1 bg-orange-500/10 px-2 py-1 rounded text-orange-300 border border-orange-500/20">
                     <Play size={10} fill="currentColor"/> Streaming
                   </span>
                   <span>{data.server_used || "Server VIP"}</span>
@@ -183,13 +183,13 @@ const DonghuaWatch = () => {
 
             <div className="grid grid-cols-2 gap-4">
               {data.nav?.prev_slug ? (
-                <Link to={`/donghua/watch/${data.nav.prev_slug}`} className="flex items-center justify-center gap-2 px-4 py-3 bg-[#1e1e1e] border border-white/5 rounded-xl text-sm font-bold hover:bg-violet-600 transition-all">
+                <Link to={`/donghua/watch/${data.nav.prev_slug}`} className="flex items-center justify-center gap-2 px-4 py-3 bg-[#1e1e1e] border border-white/5 rounded-xl text-sm font-bold hover:bg-orange-600 transition-all">
                   <ChevronLeft size={18}/> Episode Lalu
                 </Link>
               ) : <button disabled className="flex items-center justify-center gap-2 px-4 py-3 bg-white/5 rounded-xl text-sm font-bold opacity-50"><ChevronLeft size={18}/> Episode Lalu</button>}
 
               {data.nav?.next_slug ? (
-                <Link to={`/donghua/watch/${data.nav.next_slug}`} className="flex items-center justify-center gap-2 px-4 py-3 bg-[#1e1e1e] border border-white/5 rounded-xl text-sm font-bold hover:bg-violet-600 transition-all">
+                <Link to={`/donghua/watch/${data.nav.next_slug}`} className="flex items-center justify-center gap-2 px-4 py-3 bg-[#1e1e1e] border border-white/5 rounded-xl text-sm font-bold hover:bg-orange-600 transition-all">
                   Episode Lanjut <ChevronRight size={18}/>
                 </Link>
               ) : <button disabled className="flex items-center justify-center gap-2 px-4 py-3 bg-white/5 rounded-xl text-sm font-bold opacity-50">Episode Lanjut <ChevronRight size={18}/></button>}

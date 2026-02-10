@@ -68,7 +68,7 @@ const Login = () => {
                           value={email}
                           onChange={(e) => setEmail(e.target.value)}
                           placeholder="email@contoh.com" 
-                          className="w-full bg-[#27272a] border border-transparent focus:border-violet-500 rounded-xl py-3 pl-12 pr-4 text-sm text-white focus:outline-none transition-all"
+                          className="w-full bg-[#27272a] border border-transparent focus:border-orange-500 rounded-xl py-3 pl-12 pr-4 text-sm text-white focus:outline-none transition-all"
                       />
                   </div>
               </div>
@@ -83,7 +83,7 @@ const Login = () => {
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
                           placeholder="••••••••" 
-                          className="w-full bg-[#27272a] border border-transparent focus:border-violet-500 rounded-xl py-3 pl-12 pr-4 text-sm text-white focus:outline-none transition-all"
+                          className="w-full bg-[#27272a] border border-transparent focus:border-orange-500 rounded-xl py-3 pl-12 pr-4 text-sm text-white focus:outline-none transition-all"
                       />
                   </div>
               </div>
@@ -95,14 +95,14 @@ const Login = () => {
               <button 
                   type="submit" 
                   disabled={loading}
-                  className="w-full bg-violet-600 hover:bg-violet-700 text-white font-bold py-3.5 rounded-xl transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 mt-2"
+                  className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-3.5 rounded-xl transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 mt-2"
               >
                   {loading ? <Loader2 className="animate-spin" size={20} /> : 'Masuk Sekarang'}
               </button>
           </form>
 
           <div className="mt-8 text-center text-sm text-gray-500">
-              Belum punya akun? <Link to="/register" className="text-violet-500 font-bold hover:underline">Daftar</Link>
+              Belum punya akun? <Link to="/register" className="text-orange-500 font-bold hover:underline">Daftar</Link>
           </div>
         </div>
       </div>

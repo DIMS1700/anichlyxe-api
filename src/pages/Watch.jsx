@@ -524,7 +524,7 @@ const Watch = () => {
                                 }}
                                 className={`w-full flex items-center justify-between p-3 rounded-xl transition-colors ${
                                     currentServer?.quality === s.quality 
-                                    ? 'bg-violet-500/20 text-violet-500 border border-violet-500/50' 
+                                    ? 'bg-orange-500/20 text-orange-500 border border-orange-500/50' 
                                     : 'bg-[#27272a] text-white hover:bg-[#3f3f46]'
                                 }`}
                             >
@@ -563,7 +563,7 @@ const Watch = () => {
                         to={`/watch/${ep.id}`}
                         className={`flex-shrink-0 flex items-center justify-center min-w-[3rem] h-10 px-3 rounded-lg text-sm font-bold transition-all snap-start ${
                             isActive 
-                            ? 'bg-violet-500 text-white shadow-lg shadow-violet-500/20 scale-105 active-episode' 
+                            ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/20 scale-105 active-episode' 
                             : 'bg-[#27272a] text-gray-400 hover:bg-[#3f3f46] hover:text-white'
                         }`}
                       >
@@ -603,9 +603,9 @@ const Watch = () => {
                            onChange={(e) => setNewComment(e.target.value)}
                            disabled={isSubmitting}
                            placeholder="Tulis komentar..." 
-                           className="w-full bg-[#27272a] text-white text-sm rounded-full py-2.5 pl-4 pr-10 focus:outline-none focus:ring-1 focus:ring-violet-500/50"
+                           className="w-full bg-[#27272a] text-white text-sm rounded-full py-2.5 pl-4 pr-10 focus:outline-none focus:ring-1 focus:ring-orange-500/50"
                         />
-                        <button type="submit" disabled={isSubmitting} className="absolute right-3 top-1/2 -translate-y-1/2 text-violet-500 hover:text-violet-400 disabled:opacity-50">
+                        <button type="submit" disabled={isSubmitting} className="absolute right-3 top-1/2 -translate-y-1/2 text-orange-500 hover:text-orange-400 disabled:opacity-50">
                            <Send size={16} />
                         </button>
                      </form>
@@ -613,7 +613,7 @@ const Watch = () => {
              ) : (
                  <div className="w-full bg-[#27272a] p-3 rounded-xl flex items-center justify-between">
                      <span className="text-sm text-gray-400">Login untuk berkomentar</span>
-                     <Link to="/login" className="px-4 py-1.5 bg-violet-600 text-white text-xs font-bold rounded-lg hover:bg-violet-700">Login</Link>
+                     <Link to="/login" className="px-4 py-1.5 bg-orange-600 text-white text-xs font-bold rounded-lg hover:bg-orange-700">Login</Link>
                  </div>
              )}
           </div>
@@ -626,17 +626,17 @@ const Watch = () => {
 
                  return (
                  <div key={comment.id} className="flex gap-3 animate-in fade-in slide-in-from-bottom-2">
-                     <div className={`w-10 h-10 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0 border-2 ${isPrem ? 'border-violet-500 shadow-lg shadow-violet-500/20' : 'border-transparent bg-zinc-800'}`}>
+                     <div className={`w-10 h-10 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0 border-2 ${isPrem ? 'border-orange-500 shadow-lg shadow-orange-500/20' : 'border-transparent bg-zinc-800'}`}>
                          {comment.avatar ? (
                              <img src={comment.avatar} alt={comment.username} className="w-full h-full object-cover" />
                          ) : (
-                             <User size={18} className={isPrem ? "text-violet-500" : "text-gray-500"} />
+                             <User size={18} className={isPrem ? "text-orange-500" : "text-gray-500"} />
                          )}
                      </div>
 
                      <div className="flex-1 min-w-0">
                          <div className="flex flex-wrap items-center gap-2 mb-1">
-                             <span className={`text-sm font-bold ${isPrem ? 'text-violet-500' : 'text-gray-200'}`}>
+                             <span className={`text-sm font-bold ${isPrem ? 'text-orange-500' : 'text-gray-200'}`}>
                                  {comment.username}
                              </span>
                              
@@ -645,12 +645,12 @@ const Watch = () => {
                              </div>
 
                              {comment.isAdmin ? (
-                                 <div className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-gradient-to-r from-indigo-600 to-violet-600 text-[10px] font-bold text-white shadow-sm shadow-indigo-500/20">
+                                 <div className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-gradient-to-r from-indigo-600 to-orange-600 text-[10px] font-bold text-white shadow-sm shadow-indigo-500/20">
                                      <div className="bg-white/20 rounded-full p-0.5"><Shield size={8} fill="currentColor" /></div>
                                      <span>ADMIN</span>
                                  </div>
                              ) : isPrem ? (
-                                 <div className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-gradient-to-r from-violet-500 to-yellow-500 text-[10px] font-bold text-black shadow-sm shadow-violet-500/20">
+                                 <div className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-gradient-to-r from-orange-500 to-yellow-500 text-[10px] font-bold text-black shadow-sm shadow-orange-500/20">
                                      <Crown size={10} fill="black" />
                                      <span>Miku Prime</span>
                                  </div>

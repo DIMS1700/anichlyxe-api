@@ -50,7 +50,7 @@ const Restricted = () => {
         <div className="w-full max-w-sm space-y-3">
             <button 
                 onClick={() => navigate('/premium')}
-                className="w-full bg-gradient-to-r from-violet-600 to-red-600 hover:from-violet-500 hover:to-red-500 text-white font-bold py-3.5 rounded-xl transition-all shadow-lg shadow-violet-500/20 active:scale-95 flex items-center justify-center gap-2"
+                className="w-full bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white font-bold py-3.5 rounded-xl transition-all shadow-lg shadow-orange-500/20 active:scale-95 flex items-center justify-center gap-2"
             >
                 <Crown size={18} fill="currentColor" />
                 Beli Premium Sekarang

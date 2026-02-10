@@ -129,7 +129,7 @@ const MetaInfo = ({ movie }) => {
         <button 
           onClick={toggleBookmark}
           disabled={loadingBookmark}
-          className={`w-12 flex items-center justify-center rounded-lg border-2 transition-all active:scale-95 ${isBookmarked ? 'bg-violet-600 border-violet-600 text-white' : 'bg-transparent border-zinc-800 text-gray-400'}`}
+          className={`w-12 flex items-center justify-center rounded-lg border-2 transition-all active:scale-95 ${isBookmarked ? 'bg-orange-600 border-orange-600 text-white' : 'bg-transparent border-zinc-800 text-gray-400'}`}
         >
           {loadingBookmark ? (
               <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
@@ -156,7 +156,7 @@ const MetaInfo = ({ movie }) => {
          </div>
          <button 
             onClick={() => setShowFullSynopsis(!showFullSynopsis)}
-            className="text-xs font-bold text-violet-500 mt-1"
+            className="text-xs font-bold text-orange-500 mt-1"
          >
             {showFullSynopsis ? 'Tutup' : 'Baca Selengkapnya'}
          </button>

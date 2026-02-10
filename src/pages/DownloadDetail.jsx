@@ -208,7 +208,7 @@ const DownloadDetail = () => {
                         className="w-full flex items-center justify-between p-4 hover:bg-white/5 transition-colors"
                       >
                          <div className="flex items-center gap-3">
-                             <div className="w-8 h-8 rounded-full bg-violet-500/10 flex items-center justify-center text-violet-500">
+                             <div className="w-8 h-8 rounded-full bg-orange-500/10 flex items-center justify-center text-orange-500">
                                  <HardDrive size={16} />
                              </div>
                              <span className="text-sm font-medium text-white text-left line-clamp-1">{batch.title}</span>

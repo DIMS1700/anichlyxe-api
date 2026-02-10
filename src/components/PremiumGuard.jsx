@@ -58,7 +58,7 @@ const PremiumGuard = ({ children }) => {
   if (loading) {
     return (
       <div className="min-h-screen bg-[#111111] flex flex-col items-center justify-center text-white">
-        <Loader2 size={40} className="animate-spin text-violet-500 mb-4" />
+        <Loader2 size={40} className="animate-spin text-orange-500 mb-4" />
         <p className="text-sm font-bold text-gray-400">Memeriksa Status Premium...</p>
       </div>
     );

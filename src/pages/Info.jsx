@@ -43,7 +43,7 @@ const InfoPage = () => {
     {
       id: 'privacy',
       title: 'Kebijakan Privasi & Keamanan',
-      icon: <Shield size={18} className="text-violet-500" />,
+      icon: <Shield size={18} className="text-orange-500" />,
       content: (
         <div className="space-y-4 text-sm text-gray-300 leading-relaxed">
           <div className="bg-green-500/10 border border-green-500/20 p-4 rounded-xl flex items-start gap-3">
@@ -62,7 +62,7 @@ const InfoPage = () => {
             Privasi adalah harga mati di LyxeNime. Kami menjamin bahwa seluruh data sensitif pengguna (Email, Password, Token Login) tersimpan dengan enkripsi <strong>End-to-End</strong>.
           </p>
           
-          <ul className="list-disc pl-5 space-y-2 marker:text-violet-500">
+          <ul className="list-disc pl-5 space-y-2 marker:text-orange-500">
             <li>
                 <strong>Admin Tidak Bisa Mengakses:</strong> Kunci enkripsi hanya dipegang oleh user. <span className="text-white font-bold">Bahkan Admin LyxeNime sendiri TIDAK BISA membaca atau melihat password dan data pribadi Anda.</span>
             </li>

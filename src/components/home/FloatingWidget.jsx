@@ -59,7 +59,7 @@ const FloatingWidget = () => {
     <div className="mb-8">
       <div className="flex items-center justify-between mb-3 px-1">
         <h3 className="text-sm font-bold text-white">Terakhir Ditonton</h3>
-        <Link to="/profile" className="text-xs text-violet-500 font-medium hover:underline">Lihat Semua</Link>
+        <Link to="/profile" className="text-xs text-orange-500 font-medium hover:underline">Lihat Semua</Link>
       </div>
 
       <Link to={`/watch/${lastWatched.episodeId}`} className="block">
@@ -80,7 +80,7 @@ const FloatingWidget = () => {
 
           {/* Info */}
           <div className="flex-1 min-w-0">
-            <h4 className="font-bold text-white text-sm truncate group-hover:text-violet-500 transition-colors">
+            <h4 className="font-bold text-white text-sm truncate group-hover:text-orange-500 transition-colors">
               {lastWatched.title || lastWatched.animeTitle || 'Anime'}
             </h4>
             <p className="text-xs text-gray-400 mt-1">
@@ -89,12 +89,12 @@ const FloatingWidget = () => {
             
             {/* Progress Bar (Dummy 75% for visual) */}
             <div className="w-full h-1 bg-white/10 rounded-full mt-2 overflow-hidden">
-              <div className="h-full bg-violet-500 rounded-full transition-all duration-500" style={{ width: `${progress}%` }}></div>
+              <div className="h-full bg-orange-500 rounded-full transition-all duration-500" style={{ width: `${progress}%` }}></div>
             </div>
           </div>
 
           {/* Play Action */}
-          <div className="w-8 h-8 rounded-full bg-violet-600 flex items-center justify-center shadow-lg shadow-violet-500/20 group-hover:scale-110 transition-transform">
+          <div className="w-8 h-8 rounded-full bg-orange-600 flex items-center justify-center shadow-lg shadow-orange-500/20 group-hover:scale-110 transition-transform">
             <Play size={14} fill="white" className="text-white ml-0.5" />
           </div>
         </div>

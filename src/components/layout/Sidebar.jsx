@@ -42,7 +42,7 @@ const Sidebar = ({ isOpen, onClose }) => {
         {/* Header */}
         <div className="p-5 border-b border-white/5 flex items-center justify-between bg-[#111111] z-10">
           <h2 className="text-xl font-bold text-white flex items-center gap-2">
-            <span className="text-violet-500">Lyxe</span>Nime
+            <span className="text-orange-500">Lyxe</span>Nime
           </h2>
           <button onClick={onClose} className="p-2 bg-white/5 rounded-full hover:bg-white/10 text-gray-400 hover:text-white transition-colors">
             <X size={20} />
@@ -57,14 +57,14 @@ const Sidebar = ({ isOpen, onClose }) => {
             <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Menu Utama</h3>
             <div className="space-y-2">
               
-              {/* Beranda: VIOLET */}
+              {/* Beranda: orange */}
               <Link
                 to="/"
                 onClick={onClose}
-                className="flex items-center justify-between p-3 rounded-xl bg-gradient-to-r from-violet-500/10 to-violet-500/5 border border-violet-500/20 hover:border-violet-500/50 transition-all group"
+                className="flex items-center justify-between p-3 rounded-xl bg-gradient-to-r from-orange-500/10 to-orange-500/5 border border-orange-500/20 hover:border-orange-500/50 transition-all group"
               >
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-violet-500 text-white rounded-lg shadow-lg shadow-violet-500/20 group-hover:scale-110 transition-transform">
+                  <div className="p-2 bg-orange-500 text-white rounded-lg shadow-lg shadow-orange-500/20 group-hover:scale-110 transition-transform">
                     <Home size={18} />
                   </div>
                   <div>
@@ -72,7 +72,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                     <span className="text-[10px] text-gray-400">Halaman Utama</span>
                   </div>
                 </div>
-                <ChevronRight size={16} className="text-gray-500 group-hover:text-violet-500 group-hover:translate-x-1 transition-all" />
+                <ChevronRight size={16} className="text-gray-500 group-hover:text-orange-500 group-hover:translate-x-1 transition-all" />
               </Link>
 
               {/* FITUR BARU: KOMIK MANGA (ORANGE) */}

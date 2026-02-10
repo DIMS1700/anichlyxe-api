@@ -9,11 +9,11 @@ const NavItem = ({ icon: Icon, label, isActive, to = "/" }) => (
       size={24} 
       className={cn(
         "transition-colors duration-200", 
-        isActive ? "text-violet-500 fill-violet-500/20" : "text-gray-500 group-hover:text-white"
+        isActive ? "text-orange-500 fill-orange-500/20" : "text-gray-500 group-hover:text-white"
       )} 
       strokeWidth={isActive ? 2.5 : 2}
     />
-    <span className={cn("text-[10px] font-medium transition-colors", isActive ? "text-violet-500" : "text-gray-500")}>
+    <span className={cn("text-[10px] font-medium transition-colors", isActive ? "text-orange-500" : "text-gray-500")}>
       {label}
     </span>
   </Link>
@@ -39,7 +39,7 @@ const BottomNav = ({ onMenuClick }) => {
         <div className="flex items-center justify-center relative">
           <button 
             onClick={onMenuClick}
-            className="absolute -top-6 flex flex-col items-center justify-center bg-violet-500 rounded-full w-14 h-14 shadow-lg shadow-violet-500/20 border-4 border-[#111111] hover:scale-105 active:scale-95 transition-all duration-200 group"
+            className="absolute -top-6 flex flex-col items-center justify-center bg-orange-500 rounded-full w-14 h-14 shadow-lg shadow-orange-500/20 border-4 border-[#111111] hover:scale-105 active:scale-95 transition-all duration-200 group"
           >
             <MenuIcon className="text-white" size={24} strokeWidth={2.5} />
           </button>

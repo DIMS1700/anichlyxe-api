@@ -299,7 +299,7 @@ const VideoPlayer = ({ activeServer, onServerChange, poster, servers = [], stora
                <h3 className="text-white font-bold text-sm md:text-lg line-clamp-1 drop-shadow-md">{animeTitle}</h3>
            </div>
            {showResumeToast && (
-               <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-black/80 px-4 py-2 rounded-full text-xs font-bold text-white border border-violet-500/50 animate-in fade-in slide-in-from-top-2">
+               <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-black/80 px-4 py-2 rounded-full text-xs font-bold text-white border border-orange-500/50 animate-in fade-in slide-in-from-top-2">
                    Melanjutkan video...
                </div>
            )}
@@ -307,7 +307,7 @@ const VideoPlayer = ({ activeServer, onServerChange, poster, servers = [], stora
 
         {/* Center Controls */}
         <div className="absolute inset-0 flex items-center justify-center gap-12 pointer-events-none">
-           <button onClick={(e) => skip(-10, e)} className="pointer-events-auto p-2 text-white hover:text-violet-500 transition-transform active:scale-95">
+           <button onClick={(e) => skip(-10, e)} className="pointer-events-auto p-2 text-white hover:text-orange-500 transition-transform active:scale-95">
              <RotateCcw size={32} />
            </button>
            
@@ -319,7 +319,7 @@ const VideoPlayer = ({ activeServer, onServerChange, poster, servers = [], stora
              )}
            </button>
 
-           <button onClick={(e) => skip(10, e)} className="pointer-events-auto p-2 text-white hover:text-violet-500 transition-transform active:scale-95">
+           <button onClick={(e) => skip(10, e)} className="pointer-events-auto p-2 text-white hover:text-orange-500 transition-transform active:scale-95">
              <RotateCw size={32} />
            </button>
         </div>
@@ -335,12 +335,12 @@ const VideoPlayer = ({ activeServer, onServerChange, poster, servers = [], stora
                   ></div>
                   {/* Progress */}
                   <div 
-                    className="absolute h-full bg-violet-500 rounded-full"
+                    className="absolute h-full bg-orange-500 rounded-full"
                     style={{ width: `${(currentTime / duration) * 100}%` }}
                   ></div>
-                  {/* Handle (violet Circle) */}
+                  {/* Handle (orange Circle) */}
                   <div 
-                    className="absolute h-3 w-3 bg-violet-500 rounded-full shadow pointer-events-none"
+                    className="absolute h-3 w-3 bg-orange-500 rounded-full shadow pointer-events-none"
                     style={{ left: `${(currentTime / duration) * 100}%`, transform: 'translateX(-50%)' }}
                   ></div>
                   
@@ -367,7 +367,7 @@ const VideoPlayer = ({ activeServer, onServerChange, poster, servers = [], stora
                         <button 
                             onClick={(e) => { e.stopPropagation(); if(onPrev) onPrev(); }} 
                             disabled={!onPrev}
-                            className={`transition-colors ${onPrev ? 'hover:text-violet-500 text-white' : 'text-gray-600 cursor-default'}`}
+                            className={`transition-colors ${onPrev ? 'hover:text-orange-500 text-white' : 'text-gray-600 cursor-default'}`}
                             title="Previous Episode"
                         >
                             <SkipBack size={20} fill={onPrev ? "white" : "gray"} className={onPrev ? "text-white" : "text-gray-600"} />
@@ -375,7 +375,7 @@ const VideoPlayer = ({ activeServer, onServerChange, poster, servers = [], stora
                         <button 
                             onClick={(e) => { e.stopPropagation(); if(onNext) onNext(); }} 
                             disabled={!onNext}
-                            className={`transition-colors ${onNext ? 'hover:text-violet-500 text-white' : 'text-gray-600 cursor-default'}`}
+                            className={`transition-colors ${onNext ? 'hover:text-orange-500 text-white' : 'text-gray-600 cursor-default'}`}
                             title="Next Episode"
                         >
                             <SkipForward size={20} fill={onNext ? "white" : "gray"} className={onNext ? "text-white" : "text-gray-600"} />
@@ -402,17 +402,17 @@ const VideoPlayer = ({ activeServer, onServerChange, poster, servers = [], stora
                                                 onServerChange(server);
                                                 setShowServerList(false);
                                             }}
-                                            className={`px-3 py-2 text-sm hover:bg-white/20 transition-colors flex items-center justify-between gap-2 ${activeServer === server ? 'text-violet-500 font-bold' : 'text-white'}`}
+                                            className={`px-3 py-2 text-sm hover:bg-white/20 transition-colors flex items-center justify-between gap-2 ${activeServer === server ? 'text-orange-500 font-bold' : 'text-white'}`}
                                         >
                                             <span>{server.quality}</span>
-                                            {activeServer === server && <div className="w-1.5 h-1.5 rounded-full bg-violet-500"></div>}
+                                            {activeServer === server && <div className="w-1.5 h-1.5 rounded-full bg-orange-500"></div>}
                                         </button>
                                     ))}
                                 </div>
                             )}
                              <button 
                                 onClick={(e) => { e.stopPropagation(); setShowServerList(!showServerList); }}
-                                className="hover:text-violet-500 transition-colors text-white"
+                                className="hover:text-orange-500 transition-colors text-white"
                              >
                                  <Settings size={20} />
                              </button>
@@ -427,7 +427,7 @@ const VideoPlayer = ({ activeServer, onServerChange, poster, servers = [], stora
                               <button
                                 key={rate}
                                 onClick={(e) => changePlaybackRate(rate, e)}
-                                className={`px-4 py-2 text-sm hover:bg-white/20 transition-colors ${playbackRate === rate ? 'text-violet-500 font-bold' : 'text-white'}`}
+                                className={`px-4 py-2 text-sm hover:bg-white/20 transition-colors ${playbackRate === rate ? 'text-orange-500 font-bold' : 'text-white'}`}
                               >
                                 {rate === 1.0 ? 'Normal' : `${rate}x`}
                               </button>
@@ -436,13 +436,13 @@ const VideoPlayer = ({ activeServer, onServerChange, poster, servers = [], stora
                         )}
                         <button 
                           onClick={(e) => { e.stopPropagation(); setShowSpeedMenu(!showSpeedMenu); }}
-                          className="text-white hover:text-violet-500 transition-colors text-sm font-medium min-w-[30px]"
+                          className="text-white hover:text-orange-500 transition-colors text-sm font-medium min-w-[30px]"
                         >
                           {playbackRate === 1 ? '1x' : `${playbackRate}x`}
                         </button>
                      </div>
 
-                     <button onClick={toggleFullscreen} className="hover:text-violet-500 transition-colors">
+                     <button onClick={toggleFullscreen} className="hover:text-orange-500 transition-colors">
                          <Maximize size={20} />
                      </button>
                  </div>

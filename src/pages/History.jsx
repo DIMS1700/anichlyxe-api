@@ -134,7 +134,7 @@ const History = () => {
             </button>
             <button 
                 onClick={() => setFilter('anime')}
-                className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${filter === 'anime' ? 'bg-violet-500 text-white' : 'bg-zinc-800 text-gray-400 hover:bg-zinc-700'}`}
+                className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${filter === 'anime' ? 'bg-orange-500 text-white' : 'bg-zinc-800 text-gray-400 hover:bg-zinc-700'}`}
             >
                 Anime
             </button>
@@ -180,7 +180,7 @@ const History = () => {
                            )}
                            
                            {/* Label Overlay */}
-                           <div className={`absolute top-1 left-1 px-1.5 py-0.5 backdrop-blur-sm rounded text-[9px] font-bold tracking-wider text-white ${item.type === 'manga' ? 'bg-green-600/80' : 'bg-violet-600/80'}`}>
+                           <div className={`absolute top-1 left-1 px-1.5 py-0.5 backdrop-blur-sm rounded text-[9px] font-bold tracking-wider text-white ${item.type === 'manga' ? 'bg-green-600/80' : 'bg-orange-600/80'}`}>
                                 {item.type === 'manga' ? 'CH ' + (item.episodeNumber) : 'EP ' + item.episodeNumber}
                            </div>
                            
@@ -242,7 +242,7 @@ const History = () => {
                <p className="text-sm text-center max-w-[200px] mb-6">
                    {filter === 'anime' ? "Tonton anime" : filter === 'manga' ? "Baca manga" : "Tonton anime atau baca manga"} favoritmu dan riwayatnya akan muncul di sini.
                </p>
-               <Link to={filter === 'manga' ? "/manga" : "/"} className="px-6 py-3 bg-violet-600 rounded-full text-white text-sm font-bold hover:bg-violet-700 transition-colors">
+               <Link to={filter === 'manga' ? "/manga" : "/"} className="px-6 py-3 bg-orange-600 rounded-full text-white text-sm font-bold hover:bg-orange-700 transition-colors">
                    Mulai {filter === 'manga' ? "Membaca" : "Nonton"}
                </Link>
            </div>

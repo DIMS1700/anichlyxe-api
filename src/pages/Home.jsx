@@ -34,7 +34,7 @@ const Home = () => {
       <Layout>
         <div className="flex flex-col items-center justify-center min-h-[50vh] text-center px-4">
           <p className="text-red-400 mb-2">Gagal memuat data</p>
-          <button onClick={() => window.location.reload()} className="px-4 py-2 bg-violet-600 rounded-lg text-sm font-bold text-white">
+          <button onClick={() => window.location.reload()} className="px-4 py-2 bg-orange-600 rounded-lg text-sm font-bold text-white">
             Coba Lagi
           </button>
         </div>

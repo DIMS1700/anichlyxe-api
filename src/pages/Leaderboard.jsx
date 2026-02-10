@@ -102,7 +102,7 @@ const Leaderboard = () => {
                     </p>
                     <Link 
                         to="/login" 
-                        className="px-6 py-2.5 bg-violet-600 hover:bg-violet-700 text-white font-bold rounded-xl transition-colors flex items-center gap-2"
+                        className="px-6 py-2.5 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-xl transition-colors flex items-center gap-2"
                     >
                         <LogIn size={18} />
                         Login Sekarang
@@ -156,7 +156,7 @@ const Leaderboard = () => {
 
                             {/* XP Badge */}
                             <div className="text-right">
-                                <div className="text-sm font-black text-violet-500 font-mono">
+                                <div className="text-sm font-black text-orange-500 font-mono">
                                     {user.xp || 0} XP
                                 </div>
                             </div>

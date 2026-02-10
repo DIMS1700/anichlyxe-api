@@ -85,7 +85,7 @@ const Manga = () => {
   const getTypeColor = (type) => {
       if (!type) return 'bg-orange-500';
       const t = type.toLowerCase();
-      if (t.includes('manhwa')) return 'bg-violet-600';
+      if (t.includes('manhwa')) return 'bg-orange-600';
       if (t.includes('manhua')) return 'bg-green-600';
       return 'bg-orange-500';
   };

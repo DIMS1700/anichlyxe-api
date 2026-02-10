@@ -278,7 +278,7 @@ const Admin = () => {
     return (
       <Layout withBottomNav={false}>
         <div className="min-h-screen flex items-center justify-center">
-            <div className="w-10 h-10 border-4 border-violet-500 border-t-transparent rounded-full animate-spin"></div>
+            <div className="w-10 h-10 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
         </div>
       </Layout>
     );
@@ -330,7 +330,7 @@ const Admin = () => {
 
             {/* Total Views */}
             <div className="bg-[#18181b] border border-white/5 p-4 rounded-2xl">
-                <div className="p-2 bg-violet-500/10 rounded-lg w-fit mb-3 text-violet-500">
+                <div className="p-2 bg-orange-500/10 rounded-lg w-fit mb-3 text-orange-500">
                     <Eye size={20} />
                 </div>
                 <h3 className="text-2xl font-bold text-white mb-1">
@@ -410,7 +410,7 @@ const Admin = () => {
         {/* --- LEVEL UP MANUAL SECTION --- */}
         <div className="bg-[#18181b] border border-white/5 p-6 rounded-2xl mb-6">
             <div className="flex items-center gap-3 mb-4">
-                <div className="p-2 bg-violet-500/10 rounded-lg text-violet-500">
+                <div className="p-2 bg-orange-500/10 rounded-lg text-orange-500">
                     <Zap size={24} />
                 </div>
                 <div>
@@ -425,19 +425,19 @@ const Admin = () => {
                     placeholder="Email atau Username User..." 
                     value={lvlIdentifier}
                     onChange={(e) => setLvlIdentifier(e.target.value)}
-                    className="flex-1 bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-violet-500 transition-colors"
+                    className="flex-1 bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-orange-500 transition-colors"
                 />
                 <input 
                     type="number" 
                     placeholder="Jml Level (e.g. 5)" 
                     value={lvlAmount}
                     onChange={(e) => setLvlAmount(e.target.value)}
-                    className="w-full md:w-32 bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-violet-500 transition-colors"
+                    className="w-full md:w-32 bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-orange-500 transition-colors"
                 />
                 <button 
                     type="submit"
                     disabled={lvlLoading}
-                    className="bg-violet-600 hover:bg-violet-700 text-white font-bold py-3 px-6 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    className="bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 px-6 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                     {lvlLoading ? <Activity size={18} className="animate-spin"/> : <Plus size={18} />}
                     <span className="md:hidden">Naikkan Level</span>
@@ -530,7 +530,7 @@ const Admin = () => {
              <div className="flex border-b border-white/5">
                  <button 
                     onClick={() => setActiveTab('new')}
-                    className={`flex-1 py-3 text-xs font-bold flex items-center justify-center gap-2 transition-colors ${activeTab === 'new' ? 'bg-white/5 text-white border-b-2 border-violet-500' : 'text-gray-500 hover:text-white'}`}
+                    className={`flex-1 py-3 text-xs font-bold flex items-center justify-center gap-2 transition-colors ${activeTab === 'new' ? 'bg-white/5 text-white border-b-2 border-orange-500' : 'text-gray-500 hover:text-white'}`}
                  >
                      <Database size={14} className="text-green-500" /> Database Baru
                  </button>

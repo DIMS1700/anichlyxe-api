@@ -103,7 +103,7 @@ const Download = () => {
                 onClick={() => setSource('kusonime')}
                 className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-md text-xs font-bold transition-all ${
                     source === 'kusonime' 
-                    ? 'bg-violet-600 text-white shadow-lg' 
+                    ? 'bg-orange-600 text-white shadow-lg' 
                     : 'text-gray-400 hover:text-white'
                 }`}
             >
@@ -129,12 +129,12 @@ const Download = () => {
                         value={tempSearch}
                         onChange={(e) => setTempSearch(e.target.value)}
                         placeholder="Cari anime di Kusonime..." 
-                        className="w-full bg-zinc-900 border border-zinc-800 rounded-xl py-3 pl-11 pr-4 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-violet-500 transition-colors"
+                        className="w-full bg-zinc-900 border border-zinc-800 rounded-xl py-3 pl-11 pr-4 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-orange-500 transition-colors"
                     />
                     <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" />
                     <button 
                         type="submit"
-                        className="absolute right-2 top-1/2 -translate-y-1/2 bg-zinc-800 hover:bg-violet-600 text-white p-1.5 rounded-lg transition-colors"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 bg-zinc-800 hover:bg-orange-600 text-white p-1.5 rounded-lg transition-colors"
                     >
                         <ChevronRight size={16} />
                     </button>
@@ -224,7 +224,7 @@ const Download = () => {
                                     
                                     <div className="mt-2 pt-2 border-t border-white/5 flex items-center justify-between text-[10px] text-gray-500">
                                         <span className="flex items-center gap-1"><Tv size={10} /> {type}</span>
-                                        <span className={`px-1.5 py-0.5 rounded font-medium ${isSamehadaku ? 'bg-blue-500/10 text-blue-500' : 'bg-violet-500/10 text-violet-500'}`}>
+                                        <span className={`px-1.5 py-0.5 rounded font-medium ${isSamehadaku ? 'bg-blue-500/10 text-blue-500' : 'bg-orange-500/10 text-orange-500'}`}>
                                             {isSamehadaku ? 'SMH' : 'KSO'}
                                         </span>
                                     </div>

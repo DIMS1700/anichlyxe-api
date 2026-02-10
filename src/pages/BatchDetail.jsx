@@ -159,7 +159,7 @@ const BatchDetail = () => {
                         <div className="space-y-4">
                             {data.download_links.map((group, idx) => (
                                 <div key={idx} className="bg-zinc-900/50 rounded-xl p-4 border border-white/5">
-                                    <h4 className="text-sm font-bold text-violet-400 mb-3 line-clamp-2">{group.resolution}</h4>
+                                    <h4 className="text-sm font-bold text-orange-400 mb-3 line-clamp-2">{group.resolution}</h4>
                                     <div className="flex flex-wrap gap-2">
                                         {group.links?.map((link, lIdx) => (
                                             <a 
@@ -167,7 +167,7 @@ const BatchDetail = () => {
                                                 href={link.url}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
-                                                className="flex items-center gap-1.5 px-3 py-1.5 bg-violet-600/10 hover:bg-violet-600 text-violet-400 hover:text-white rounded-lg text-[10px] font-medium transition-all border border-violet-600/20"
+                                                className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-600/10 hover:bg-orange-600 text-orange-400 hover:text-white rounded-lg text-[10px] font-medium transition-all border border-orange-600/20"
                                             >
                                                 {link.host} <ExternalLink size={10} />
                                             </a>

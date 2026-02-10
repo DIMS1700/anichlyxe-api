@@ -52,7 +52,7 @@ const FeaturedCarousel = ({ data }) => {
                px-4 py-2 rounded-bl-3xl font-black text-xl italic tracking-tighter shadow-lg
                ${index === 0 ? 'bg-brand-gold text-black' : 
                  index === 1 ? 'bg-gray-300 text-black' : 
-                 index === 2 ? 'bg-violet-700 text-white' : 'bg-white/10 text-white backdrop-blur-md'}
+                 index === 2 ? 'bg-orange-700 text-white' : 'bg-white/10 text-white backdrop-blur-md'}
              `}>
                #{index + 1}
              </div>

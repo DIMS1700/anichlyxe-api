@@ -49,18 +49,18 @@ const Donghua = () => {
 
   return (
     <Layout>
-      <div className="min-h-screen bg-[#0a0a0a] bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-violet-900/20 via-[#0a0a0a] to-black pb-24 text-white">
+      <div className="min-h-screen bg-[#0a0a0a] bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-orange-900/20 via-[#0a0a0a] to-black pb-24 text-white">
         
         {/* Header */}
         <div className="sticky top-0 z-50 bg-[#0a0a0a]/80 backdrop-blur-xl border-b border-white/5 px-4 py-3 flex items-center justify-between shadow-lg">
           <div className="flex items-center gap-2">
             <h1 className="text-xl font-black italic tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400">
-              DONGHUA<span className="text-violet-500">ZONE</span>
+              DONGHUA<span className="text-orange-500">ZONE</span>
             </h1>
           </div>
           <Link 
             to="/search" 
-            className="p-2.5 bg-violet-500/10 text-violet-400 border border-violet-500/20 rounded-full hover:bg-violet-500/20 transition-all"
+            className="p-2.5 bg-orange-500/10 text-orange-400 border border-orange-500/20 rounded-full hover:bg-orange-500/20 transition-all"
           >
             <Search size={20} />
           </Link>
@@ -69,7 +69,7 @@ const Donghua = () => {
         {/* Content */}
         <div className="px-4 mt-6">
           <div className="flex items-center gap-2 mb-6">
-            <div className="p-1.5 bg-violet-600 rounded-lg shadow-lg shadow-violet-600/30">
+            <div className="p-1.5 bg-orange-600 rounded-lg shadow-lg shadow-orange-600/30">
               <Calendar size={16} className="text-white" />
             </div>
             <h3 className="text-lg font-bold text-white">Update Episode Terbaru</h3>
@@ -94,14 +94,14 @@ const Donghua = () => {
                   key={index} 
                   className="group relative flex flex-col gap-3"
                 >
-                  <div className="relative aspect-[3/4.5] rounded-xl overflow-hidden bg-gray-900 border border-white/5 shadow-lg group-hover:shadow-violet-900/20 transition-all">
+                  <div className="relative aspect-[3/4.5] rounded-xl overflow-hidden bg-gray-900 border border-white/5 shadow-lg group-hover:shadow-orange-900/20 transition-all">
                     <img 
                       src={item.image} 
                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" 
                       alt={item.title} 
                       loading="lazy"
                     />
-                    <div className="absolute top-2 left-2 px-2.5 py-1 bg-violet-600 shadow-lg rounded-md text-[10px] font-bold text-white">
+                    <div className="absolute top-2 left-2 px-2.5 py-1 bg-orange-600 shadow-lg rounded-md text-[10px] font-bold text-white">
                       {item.episode || "Baru"}
                     </div>
                     {item.type && (
@@ -110,13 +110,13 @@ const Donghua = () => {
                         </div>
                     )}
                     <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all backdrop-blur-[2px]">
-                      <div className="w-12 h-12 bg-violet-600 rounded-full flex items-center justify-center shadow-lg transform scale-50 group-hover:scale-100 transition-transform">
+                      <div className="w-12 h-12 bg-orange-600 rounded-full flex items-center justify-center shadow-lg transform scale-50 group-hover:scale-100 transition-transform">
                         <PlayCircle size={24} className="text-white fill-white" />
                       </div>
                     </div>
                   </div>
                   <div className="flex flex-col">
-                    <h4 className="text-[13px] font-bold text-gray-100 line-clamp-2 leading-snug group-hover:text-violet-400 transition-colors">
+                    <h4 className="text-[13px] font-bold text-gray-100 line-clamp-2 leading-snug group-hover:text-orange-400 transition-colors">
                       {item.title}
                     </h4>
                   </div>
