@@ -8,7 +8,7 @@ import requests
 from urllib.parse import unquote
 import urllib3
 
-# Matikan warning SSL
+# Disable SSL warnings
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 app = FastAPI()
@@ -20,21 +20,27 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# DATA CADANGAN (MOCK)
+# MOCK DATA (Fallback)
 MOCK_DATA = [
     {"title": "One Piece", "slug": "one-piece", "image": "https://upload.wikimedia.org/wikipedia/en/9/90/One_Piece%2C_Volume_61_Cover_%28Japanese%29.jpg", "latest": "Ch. 1100", "type": "Manga"},
     {"title": "Solo Leveling", "slug": "solo-leveling", "image": "https://upload.wikimedia.org/wikipedia/en/9/95/Solo_Leveling_Webtoon_01.jpg", "latest": "End", "type": "Manhwa"},
     {"title": "Jujutsu Kaisen", "slug": "jujutsu-kaisen", "image": "https://upload.wikimedia.org/wikipedia/en/4/46/Jujutsu_Kaisen_cover.jpg", "latest": "Ch. 240", "type": "Manga"},
-    {"title": "Mushoku Tensei", "slug": "mushoku-tensei", "image": "https://upload.wikimedia.org/wikipedia/en/d/d3/Mushoku_Tensei_light_novel_volume_1_cover.jpg", "latest": "Ch. 98", "type": "Manga"},
-    {"title": "Magic Emperor", "slug": "magic-emperor", "image": "https://fandomwire.com/wp-content/uploads/2024/07/Magic-Emperor-Manhua.jpg", "latest": "Ch. 500", "type": "Manhua"},
 ]
 
 DOMAINS = ["https://komiku.org", "https://api.komiku.org"]
 USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36'
 
 # ==========================================
-# 🛠️ SMART FETCH
+# 🛠️ HELPER FUNCTIONS
 # ==========================================
+def fix_url(url):
+    if not url: return ""
+    url = url.strip()
+    url = url.split('?')[0]
+    if url.startswith("//"): return f"https:{url}"
+    if url.startswith("/") and not url.startswith("//"): return f"https://komiku.org{url}"
+    return url
+
 def validate_soup(soup):
     if soup.select('.bge'): return True
     if soup.select('.daftar'): return True
@@ -50,26 +56,16 @@ def fetch_smart(path: str, params: str = ""):
     for domain in DOMAINS:
         url = f"{domain}{path}{params}"
         try:
-            print(f"\n🔄 Mencoba: {url}")
+            print(f"\n🔄 Connecting: {url}")
             resp = scraper.get(url, headers=headers, timeout=20)
             if resp.status_code == 200:
                 soup = BeautifulSoup(resp.text, "html.parser")
                 if validate_soup(soup):
-                    print(f"✅ SUKSES: {domain}")
+                    print(f"✅ SUCCESS: {domain}")
                     return soup
         except Exception as e:
-            print(f"❌ Gagal: {e}")
+            print(f"❌ Failed: {e}")
     return None
-
-# ==========================================
-# 🛠️ PARSER
-# ==========================================
-def fix_url(url):
-    if not url: return ""
-    url = url.strip()
-    if url.startswith("//"): return f"https:{url}"
-    if url.startswith("/") and not url.startswith("//"): return f"https://komiku.org{url}"
-    return url
 
 def parse_manga_item(item):
     try:
@@ -84,7 +80,7 @@ def parse_manga_item(item):
         image = "https://via.placeholder.com/150?text=No+Image"
         if img:
             raw = img.get('data-src') or img.get('src')
-            if raw: image = fix_url(raw.split('?')[0])
+            if raw: image = fix_url(raw)
 
         title = ""
         h3 = item.find(['h3', 'h4'])
@@ -112,21 +108,20 @@ def parse_manga_item(item):
 # ENDPOINTS
 # ==========================================
 @app.get("/")
-async def root(): return {"status": "API V30 (Syntax Fixed)", "docs": "/docs"}
+async def root(): return {"status": "API V30 (Detail Image Fix)", "docs": "/docs"}
 
 @app.get("/api/home")
 async def get_home():
     soup = fetch_smart("/")
     data, seen = [], set()
-    
     if soup:
+        # PERBAIKAN DI SINI (HAPUS TITIK DUA)
         items = soup.select('.bge') or soup.select('.daftar .item') or soup.find_all('a', href=re.compile(r'/(manga|manhua|manhwa)/'))
         for item in items:
             manga = parse_manga_item(item)
             if manga and manga['slug'] not in seen:
                 seen.add(manga['slug'])
                 data.append(manga)
-    
     if not data: return MOCK_DATA
     return data
 
@@ -134,7 +129,6 @@ async def get_home():
 async def get_popular():
     soup = fetch_smart("/daftar-komik/", "?orderby=popular")
     data, seen = [], set()
-    
     if soup:
         items = soup.select('.bge') or soup.select('.daftar .item')
         for item in items:
@@ -142,15 +136,13 @@ async def get_popular():
             if manga and manga['slug'] not in seen:
                 seen.add(manga['slug'])
                 data.append(manga)
-
+    
     if not data:
-        print("⚠️ Populer kosong, meminjam data Home...")
         home_data = await get_home()
         if home_data and home_data != MOCK_DATA:
             data = random.sample(home_data, min(len(home_data), 10))
         else:
-            data = MOCK_DATA 
-            
+            data = MOCK_DATA
     return data
 
 @app.get("/api/search")
@@ -164,10 +156,7 @@ async def search(query: str):
             if manga and manga['slug'] not in seen:
                 seen.add(manga['slug'])
                 data.append(manga)
-    
-    if not data:
-         return [m for m in MOCK_DATA if query.lower() in m['title'].lower()]
-         
+    if not data: return [m for m in MOCK_DATA if query.lower() in m['title'].lower()]
     return data
 
 @app.get("/api/list")
@@ -177,46 +166,40 @@ async def get_list(page: int = 1, genre: str = None, order: str = None):
     if page > 1: base += f"page/{page}/"
     if genre: params.append(f"genre={genre}")
     if order: params.append(f"orderby={order}")
-    
     soup = fetch_smart(base, "?" + "&".join(params) if params else "")
     if (not soup or not soup.select('.bge')) and genre:
         soup = fetch_smart(f"/genre/{genre}/page/{page}/")
-
     data, seen = [], set()
     if soup:
-        # Perbaikan Syntax di sini (menghapus titik dua di akhir)
         items = soup.select('.bge') or soup.select('.daftar .item') or soup.find_all('a', href=re.compile(r'/(manga|manhua|manhwa)/'))
         for item in items:
             manga = parse_manga_item(item)
             if manga and manga['slug'] not in seen:
                 seen.add(manga['slug'])
                 data.append(manga)
-    
     if not data: return MOCK_DATA
     return data
 
 @app.get("/api/detail/{slug}")
 async def detail(slug: str):
     soup = fetch_smart(f"/manga/{slug}/")
-    
     if not soup: 
         return {
             "title": slug.replace('-', ' ').title(),
             "image": "https://via.placeholder.com/300x400?text=No+Data",
-            "synopsis": "Mohon maaf, koneksi ke server Komiku sedang diblokir Cloudflare.",
-            "info": {},
-            "chapters": []
+            "synopsis": "Gagal terhubung ke server Komiku.",
+            "info": {}, "chapters": []
         }
-        
     try:
         h1 = soup.select_one('h1') or soup.select_one('#Judul h1')
         title = h1.text.strip() if h1 else slug.replace('-', ' ').title()
         
+        image = "https://via.placeholder.com/300x400?text=No+Image"
         img = soup.select_one('.sd-img img')
-        image = ""
         if img:
-            raw = img.get('src').split('?')[0]
-            if raw: image = fix_url(raw)
+            raw = img.get('src') or img.get('data-src') or img.get('srcset')
+            if raw: 
+                image = fix_url(raw.split(' ')[0])
         
         desc = soup.select_one('.desc, .sinopsis, #Sinopsis')
         synopsis = desc.get_text(strip=True) if desc else ""
@@ -229,7 +212,6 @@ async def detail(slug: str):
         chapters = []
         links = soup.select('#Daftar_Chapter td.judulseries a') or soup.find_all('a', href=re.compile(r'/(ch|chapter)/'))
         seen_ch = set()
-        
         for link in links:
             href = link.get('href')
             ch_slug = href.strip('/').split('/')[-1]
@@ -244,7 +226,6 @@ async def detail(slug: str):
 async def read(slug: str):
     soup = fetch_smart(f"/ch/{slug}/")
     images = []
-    
     if soup:
         container = soup.select_one('#Baca_Komik')
         if container:
@@ -255,10 +236,7 @@ async def read(slug: str):
                     full = fix_url(src)
                     if "facebook" not in full and "twitter" not in full and "logo" not in full:
                         images.append(full)
-    
-    if not images:
-        images = ["https://via.placeholder.com/800x1200?text=Gagal+Memuat+Gambar"]
-
+    if not images: images = ["https://via.placeholder.com/800x1200?text=Gagal+Memuat+Gambar"]
     return {"images": images}
 
 @app.get("/api/image")
@@ -267,9 +245,7 @@ async def image_proxy(url: str):
     try:
         target_url = unquote(url)
         headers = {'User-Agent': USER_AGENT}
-        
-        if "komiku" in target_url:
-            headers['Referer'] = 'https://komiku.org/'
+        if "komiku" in target_url: headers['Referer'] = 'https://komiku.org/'
             
         resp = requests.get(target_url, headers=headers, stream=True, timeout=15, verify=False)
         if resp.status_code == 200:
